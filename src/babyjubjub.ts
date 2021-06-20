@@ -243,8 +243,8 @@ export class PrivateKey {
   }
 
   r() {
-    // refine later
-    return new CurveField(1);
+    // TODO: refine later
+    return new CurveField(new BN(crypto.randomBytes(32)));
   }
 
   get publicKey() {
