@@ -201,8 +201,8 @@ var PrivateKey = /** @class */ (function () {
         return this.key.v.toString("hex");
     };
     PrivateKey.prototype.r = function () {
-        // refine later
-        return new CurveField(1);
+        // TODO: refine later
+        return new CurveField(new bn_js_1.default(crypto_1.default.randomBytes(32)));
     };
     Object.defineProperty(PrivateKey.prototype, "publicKey", {
         get: function () {
