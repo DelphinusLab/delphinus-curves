@@ -3,65 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PublicKey = exports.PrivateKey = exports.Point = exports.CurveField = exports.Field = void 0;
+exports.PublicKey = exports.PrivateKey = exports.Point = exports.CurveField = void 0;
 var bn_js_1 = __importDefault(require("bn.js"));
 var sha256_1 = __importDefault(require("sha256"));
 var crypto_1 = __importDefault(require("crypto"));
-var Field = /** @class */ (function () {
-    function Field(v) {
-        if (!(v instanceof bn_js_1.default)) {
-            v = new bn_js_1.default(v);
-        }
-        this.v = v.umod(this.modulus);
-    }
-    Object.defineProperty(Field.prototype, "modulus", {
-        get: function () {
-            return new bn_js_1.default("21888242871839275222246405745257275088548364400416034343698204186575808495617", 10);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Field.prototype.add = function (f) {
-        return new Field(this.v.add(f.v));
-    };
-    Field.prototype.mul = function (f) {
-        return new Field(this.v.mul(f.v));
-    };
-    Field.prototype.sub = function (f) {
-        return new Field(this.v.sub(f.v));
-    };
-    Field.prototype.neg = function () {
-        return new Field(this.v.neg());
-    };
-    Field.prototype.div = function (f) {
-        return new Field(this.v.mul(f.inv().v));
-    };
-    //see, https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm#Polynomial_extended_Euclidean_algorithm
-    Field.prototype.inv = function () {
-        if (this.v.eqn(0)) {
-            return this;
-        }
-        var newt = new bn_js_1.default(1);
-        var t = new bn_js_1.default(0);
-        var newr = this.v;
-        var r = this.modulus;
-        var op = function (x, newx, q) {
-            return [newx, x.sub(q.mul(newx))];
-        };
-        while (!newr.eqn(0)) {
-            var q = r.div(newr);
-            var t_newt = op(t, newt, q);
-            t = t_newt[0];
-            newt = t_newt[1];
-            var r_newr = op(r, newr, q);
-            r = r_newr[0];
-            newr = r_newr[1];
-        }
-        return new Field(t);
-    };
-    return Field;
-}());
-exports.Field = Field;
+var field_1 = require("./field");
 var CurveField = /** @class */ (function () {
     function CurveField(v) {
         if (!(v instanceof bn_js_1.default)) {
@@ -118,16 +64,16 @@ var CurveField = /** @class */ (function () {
 }());
 exports.CurveField = CurveField;
 var constants = {
-    c: new Field(8),
-    a: new Field(168700),
-    d: new Field(168696),
-    gX: new Field(new bn_js_1.default("16540640123574156134436876038791482806971768689494387082833631921987005038935", 10)),
-    gY: new Field(new bn_js_1.default("20819045374670962167435360035096875258406992893633759881276124905556507972311", 10)),
+    c: new field_1.Field(8),
+    a: new field_1.Field(168700),
+    d: new field_1.Field(168696),
+    gX: new field_1.Field(new bn_js_1.default("16540640123574156134436876038791482806971768689494387082833631921987005038935", 10)),
+    gY: new field_1.Field(new bn_js_1.default("20819045374670962167435360035096875258406992893633759881276124905556507972311", 10)),
 };
 var Point = /** @class */ (function () {
     function Point(x, y) {
-        this.x = x instanceof Field ? x : new Field(x);
-        this.y = y instanceof Field ? y : new Field(y);
+        this.x = x instanceof field_1.Field ? x : new field_1.Field(x);
+        this.y = y instanceof field_1.Field ? y : new field_1.Field(y);
     }
     Object.defineProperty(Point.prototype, "zero", {
         get: function () {
@@ -155,11 +101,11 @@ var Point = /** @class */ (function () {
         var v2 = p.y;
         //u3 = (u1 * v2 + v1 * u2) / (1 + D * u1 * u2 * v1 * v2)
         var u3_m = u1.mul(v2).add(v1.mul(u2));
-        var u3_d = constants.d.mul(u1).mul(u2).mul(v1).mul(v2).add(new Field(1));
+        var u3_d = constants.d.mul(u1).mul(u2).mul(v1).mul(v2).add(new field_1.Field(1));
         var u3 = u3_m.div(u3_d);
         //v3 = (v1 * v2 - A * u1 * u2) / (1 - D * u1 * u2 * v1 * v2)
         var v3_m = v1.mul(v2).sub(constants.a.mul(u1).mul(u2));
-        var v3_d = new Field(1).sub(constants.d.mul(u1).mul(u2).mul(v1).mul(v2));
+        var v3_d = new field_1.Field(1).sub(constants.d.mul(u1).mul(u2).mul(v1).mul(v2));
         var v3 = v3_m.div(v3_d);
         return new Point(u3, v3);
     };
