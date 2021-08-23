@@ -38,4 +38,3 @@ function poseidon(inputs) {
     return state[0];
 }
 exports.poseidon = poseidon;
-module.exports = poseidon;

@@ -1,17 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MarkleTree = void 0;
+exports.MarkleTree = exports.MaxHeight = void 0;
 var field_1 = require("./field");
 var poseidon_1 = require("./poseidon");
 var hash = poseidon_1.poseidon;
-var MaxHeight = 16;
+exports.MaxHeight = 16;
 var MarkleTree = /** @class */ (function () {
     function MarkleTree() {
+        this.root = MarkleTree.emptyNode(exports.MaxHeight);
     }
     MarkleTree.emptyNodeHash = function (height) {
         if (this.emptyHashes.length === 0) {
             this.emptyHashes.push(new field_1.Field(0));
-            for (var i = 0; i < MaxHeight; i++) {
+            for (var i = 0; i < exports.MaxHeight; i++) {
                 var last = this.emptyHashes[0];
                 this.emptyHashes.push(hash([last, last, last, last]));
             }
@@ -21,27 +22,71 @@ var MarkleTree = /** @class */ (function () {
     MarkleTree.emptyNode = function (height) {
         return {
             value: this.emptyNodeHash(height),
-            children: [undefined, undefined, undefined, undefined]
+            children: height === 0 ? [] : [undefined, undefined, undefined, undefined]
         };
     };
     MarkleTree.prototype.getPath = function (index) {
+        var _a;
         var ret = {
             index: index,
             pathDigests: []
         };
         var curr = this.root;
-        var _loop_1 = function (i) {
-            var level = MaxHeight - i;
-            curr = curr !== null && curr !== void 0 ? curr : MarkleTree.emptyNode(level + 1);
-            ret.pathDigests.push(curr.children.map(function (n) { var _a; return (_a = n === null || n === void 0 ? void 0 : n.value) !== null && _a !== void 0 ? _a : MarkleTree.emptyNodeHash(level); }));
-            var offset = (index >> (level * 2)) & 3;
-            curr = curr.children[offset];
+        var _loop_1 = function (level) {
+            ret.pathDigests.push(curr.children.map(function (n) { var _a; return (_a = n === null || n === void 0 ? void 0 : n.value) !== null && _a !== void 0 ? _a : MarkleTree.emptyNodeHash(level - 1); }));
+            var offset = (index >> ((level - 1) * 2)) & 3;
+            curr = (_a = curr.children[offset]) !== null && _a !== void 0 ? _a : MarkleTree.emptyNode(level);
         };
-        for (var i = 1; i <= MaxHeight; i++) {
-            _loop_1(i);
+        for (var level = exports.MaxHeight; level >= 1; level--) {
+            _loop_1(level);
         }
         return ret;
     };
+    MarkleTree.prototype._fillPath = function (index) {
+        var _a;
+        var path = [];
+        var curr = this.root;
+        path.push(curr);
+        for (var level = exports.MaxHeight; level >= 0; level--) {
+            path.push(curr);
+            var offset = (index >> (level * 2)) & 3;
+            var next = (_a = curr.children[offset]) !== null && _a !== void 0 ? _a : MarkleTree.emptyNode(level);
+            curr.children[offset] = next;
+            curr = next;
+        }
+        return path;
+    };
+    MarkleTree.prototype.get = function (index) {
+        var _a, _b;
+        var path = this._fillPath(index);
+        return (_b = (_a = path[path.length - 1].children[index & 3]) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : new field_1.Field(0);
+    };
+    MarkleTree.prototype.set = function (index, value) {
+        var path = this._fillPath(index);
+        var leaf = path[path.length - 1].children[index & 3];
+        if (leaf) {
+            leaf.value = value;
+        }
+        for (var level = 0; level <= exports.MaxHeight; level++) {
+            var _curr = path.pop();
+            _curr && this.updateNodeHash(_curr, level);
+        }
+    };
+    MarkleTree.prototype.setLeaves = function (index, values) {
+        if (values.length != 4) {
+            throw new Error("Invalid leaves length: " + values.length);
+        }
+        var path = this._fillPath(index);
+        path[path.length - 1].children = values.map(function (value) { return ({ value: value, children: [] }); });
+        for (var level = 0; level <= exports.MaxHeight; level++) {
+            var _curr = path.pop();
+            _curr && this.updateNodeHash(_curr, level);
+        }
+    };
+    MarkleTree.prototype.updateNodeHash = function (node, level) {
+        node.value = hash(node.children.map(function (n) { var _a; return (_a = n === null || n === void 0 ? void 0 : n.value) !== null && _a !== void 0 ? _a : MarkleTree.emptyNodeHash(level); }));
+    };
+    MarkleTree.emptyHashes = [];
     return MarkleTree;
 }());
 exports.MarkleTree = MarkleTree;

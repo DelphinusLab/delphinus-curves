@@ -2,7 +2,7 @@ import { Field } from "./field";
 import { poseidon } from "./poseidon";
 
 const hash = poseidon;
-const MaxHeight = 16;
+export const MaxHeight = 16;
 
 export interface Node {
   value: Field;
@@ -15,8 +15,7 @@ export interface PathInfo {
 }
 
 export class MarkleTree {
-  root?: Node;
-  static emptyHashes: Field[];
+  static emptyHashes: Field[] = [];
 
   static emptyNodeHash(height: number) {
     if (this.emptyHashes.length === 0) {
@@ -33,9 +32,11 @@ export class MarkleTree {
   static emptyNode(height: number): Node {
     return {
       value: this.emptyNodeHash(height),
-      children: [undefined, undefined, undefined, undefined]
+      children: height === 0 ? [] : [undefined, undefined, undefined, undefined]
     };
   }
+
+  root: Node = MarkleTree.emptyNode(MaxHeight);
 
   getPath(index: number): PathInfo {
     const ret = {
@@ -45,31 +46,57 @@ export class MarkleTree {
 
     let curr = this.root;
     for (let level = MaxHeight; level >= 1; level--) {
-      curr = curr ?? MarkleTree.emptyNode(level);
       ret.pathDigests.push(curr.children.map(n => n?.value ?? MarkleTree.emptyNodeHash(level - 1)));
       const offset = (index >> ((level - 1) * 2)) & 3;
-      curr = curr.children[offset];
+      curr = curr.children[offset] ?? MarkleTree.emptyNode(level);
     }
 
     return ret;
   }
 
-  set(index: number, value: Field) {
+  _fillPath(index: number) {
     const path = [];
 
-    this.root ??= MarkleTree.emptyNode(MaxHeight);
     let curr: Node  = this.root;
     path.push(curr);
 
-    for (let level = MaxHeight - 1; level >= 1; level--) {
+    for (let level = MaxHeight; level >= 0; level--) {
+      path.push(curr);
       const offset = (index >> (level * 2)) & 3;
       const next = curr.children[offset] ?? MarkleTree.emptyNode(level);
       curr.children[offset] = next;
       curr = next;
-      path.push(curr);
     }
 
-    curr.children[index & 3] = { value, children: [] };
+    return path;
+  }
+
+  get(index: number) {
+    const path = this._fillPath(index);
+    return path[path.length - 1].children[index & 3]?.value ?? new Field(0);
+  }
+
+  set(index: number, value: Field) {
+    const path = this._fillPath(index);
+    const leaf = path[path.length - 1].children[index & 3];
+
+    if (leaf) {
+      leaf.value = value;
+    }
+
+    for (let level = 0; level <= MaxHeight; level++) {
+      const _curr = path.pop();
+      _curr && this.updateNodeHash(_curr, level);
+    }
+  }
+
+  setLeaves(index: number, values: Field[]) {
+    if (values.length != 4) {
+      throw new Error(`Invalid leaves length: ${values.length}`);
+    }
+
+    const path = this._fillPath(index);
+    path[path.length - 1].children = values.map(value => ({ value, children: [] }));
 
     for (let level = 0; level <= MaxHeight; level++) {
       const _curr = path.pop();

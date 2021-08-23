@@ -32,5 +32,3 @@ export function poseidon(inputs: Field[]): Field {
     }
     return state[0];
 }
-
-module.exports = poseidon;
