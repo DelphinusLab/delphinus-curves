@@ -6,7 +6,7 @@ export class Command {
   args: Field[];
 
   constructor(args: Field[]) {
-    this.args = args.concat(new Array(8).map(_ => new Field(0))).slice(0, 8);
+    this.args = args.concat(Array(8).fill(new Field(0))).slice(0, 8);
   }
 
   run(storage: L2Storage): PathInfo[] {

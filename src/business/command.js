@@ -20,7 +20,7 @@ var field_1 = require("../field");
 var markle_tree_1 = require("../markle-tree");
 var Command = /** @class */ (function () {
     function Command(args) {
-        this.args = args.concat(new Array(8).map(function (_) { return new field_1.Field(0); })).slice(0, 8);
+        this.args = args.concat(Array(8).fill(new field_1.Field(0))).slice(0, 8);
     }
     Command.prototype.run = function (storage) {
         throw new Error('Not Implemented yet');

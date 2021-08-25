@@ -1,9 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.genZKPInput = exports.createCommand = void 0;
+exports.genZKPInput = exports.shaCommand = exports.createCommand = void 0;
 var field_1 = require("../field");
 var markle_tree_1 = require("../markle-tree");
 var addpool_1 = require("./addpool");
+var sha256_1 = __importDefault(require("crypto-js/sha256"));
+var enc_hex_1 = __importDefault(require("crypto-js/enc-hex"));
+var bn_js_1 = __importDefault(require("bn.js"));
 var ZKPInputBuilder = /** @class */ (function () {
     function ZKPInputBuilder() {
         this.inputs = [];
@@ -38,11 +44,12 @@ var ZKPInputBuilder = /** @class */ (function () {
             this.push(new field_1.Field(0));
         }
         for (var i = 0; i < markle_tree_1.MaxHeight; i++) {
-            this.push(new Array(4).map(function (_) { return new field_1.Field(0); }));
+            this.push(Array(4).fill(new field_1.Field(0)));
         }
     };
     ZKPInputBuilder.prototype.pushCommand = function (op, command) {
         this.push(op);
+        console.log(command.args);
         this.push(command.args);
     };
     ZKPInputBuilder.prototype.pushRootHash = function (storage) {
@@ -57,13 +64,29 @@ function createCommand(op, args) {
     throw new Error('Not implemented yet');
 }
 exports.createCommand = createCommand;
+function shaCommand(op, command) {
+    var data = [op].concat(command.args).concat([new field_1.Field(0)]).map(function (x) { return x.v.toString('hex', 64); }).join('');
+    var hvalue = sha256_1.default(enc_hex_1.default.parse(data)).toString();
+    return [
+        new field_1.Field(new bn_js_1.default(hvalue.slice(0, 32), 'hex')),
+        new field_1.Field(new bn_js_1.default(hvalue.slice(32, 64), 'hex'))
+    ];
+}
+exports.shaCommand = shaCommand;
 function genZKPInput(op, args, storage) {
     var builder = new ZKPInputBuilder();
     var command = createCommand(op, args);
+    var shaValue = shaCommand(op, command);
+    builder.push(shaValue);
     builder.pushCommand(op, command);
-    builder.pushRootHash(storage);
-    var pathInfo = command.run(storage);
-    builder.pushPathInfo(pathInfo);
+    /*
+      builder.pushRootHash(storage);
+    
+      const pathInfo = command.run(storage);
+      builder.pushPathInfo(pathInfo);
+    
+      builder.pushRootHash(storage);
+    */
     return builder.inputs;
 }
 exports.genZKPInput = genZKPInput;
