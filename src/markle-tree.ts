@@ -21,7 +21,7 @@ export class MarkleTree {
     if (this.emptyHashes.length === 0) {
       this.emptyHashes.push(new Field(0));
       for (let i = 0; i < MaxHeight; i++) {
-        const last = this.emptyHashes[0];
+        const last = this.emptyHashes[i];
         this.emptyHashes.push(hash([last, last, last, last]));
       }
     }
@@ -60,12 +60,12 @@ export class MarkleTree {
     let curr: Node  = this.root;
     path.push(curr);
 
-    for (let level = MaxHeight; level >= 0; level--) {
-      path.push(curr);
+    for (let level = MaxHeight - 1; level > 0; level--) {
       const offset = (index >> (level * 2)) & 3;
       const next = curr.children[offset] ?? MarkleTree.emptyNode(level);
       curr.children[offset] = next;
       curr = next;
+      path.push(curr);
     }
 
     return path;

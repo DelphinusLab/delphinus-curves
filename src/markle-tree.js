@@ -13,7 +13,7 @@ var MarkleTree = /** @class */ (function () {
         if (this.emptyHashes.length === 0) {
             this.emptyHashes.push(new field_1.Field(0));
             for (var i = 0; i < exports.MaxHeight; i++) {
-                var last = this.emptyHashes[0];
+                var last = this.emptyHashes[i];
                 this.emptyHashes.push(hash([last, last, last, last]));
             }
         }
@@ -47,12 +47,12 @@ var MarkleTree = /** @class */ (function () {
         var path = [];
         var curr = this.root;
         path.push(curr);
-        for (var level = exports.MaxHeight; level >= 0; level--) {
-            path.push(curr);
+        for (var level = exports.MaxHeight - 1; level > 0; level--) {
             var offset = (index >> (level * 2)) & 3;
             var next = (_a = curr.children[offset]) !== null && _a !== void 0 ? _a : MarkleTree.emptyNode(level);
             curr.children[offset] = next;
             curr = next;
+            path.push(curr);
         }
         return path;
     };

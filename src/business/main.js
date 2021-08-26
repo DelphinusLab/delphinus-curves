@@ -79,14 +79,10 @@ function genZKPInput(op, args, storage) {
     var shaValue = shaCommand(op, command);
     builder.push(shaValue);
     builder.pushCommand(op, command);
-    /*
-      builder.pushRootHash(storage);
-    
-      const pathInfo = command.run(storage);
-      builder.pushPathInfo(pathInfo);
-    
-      builder.pushRootHash(storage);
-    */
+    builder.pushRootHash(storage);
+    var pathInfo = command.run(storage);
+    builder.pushPathInfo(pathInfo);
+    builder.pushRootHash(storage);
     return builder.inputs;
 }
 exports.genZKPInput = genZKPInput;

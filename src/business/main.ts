@@ -89,6 +89,5 @@ export function genZKPInput(op: Field, args: Field[], storage: L2Storage): Field
   builder.pushPathInfo(pathInfo);
 
   builder.pushRootHash(storage);
-
   return builder.inputs;
 }
