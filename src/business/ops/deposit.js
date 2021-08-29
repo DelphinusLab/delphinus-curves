@@ -16,7 +16,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DepositCommand = void 0;
-var command_1 = require("./command");
+var command_1 = require("../command");
 var DepositCommand = /** @class */ (function (_super) {
     __extends(DepositCommand, _super);
     function DepositCommand() {
@@ -31,7 +31,6 @@ var DepositCommand = /** @class */ (function (_super) {
         path.push(storage.getPath(index));
         var balance = storage.get(index);
         storage.set(index, balance.add(amount));
-        //path.push(storage.getPath(index));
         return path;
     };
     return DepositCommand;

@@ -3,15 +3,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.genZKPInput = exports.shaCommand = exports.createCommand = void 0;
-var field_1 = require("../field");
-var markle_tree_1 = require("../markle-tree");
-var addpool_1 = require("./addpool");
-var command_1 = require("./command");
+exports.genZKPInput = exports.shaCommand = void 0;
 var sha256_1 = __importDefault(require("crypto-js/sha256"));
 var enc_hex_1 = __importDefault(require("crypto-js/enc-hex"));
 var bn_js_1 = __importDefault(require("bn.js"));
-var deposit_1 = require("./deposit");
+var field_1 = require("../field");
+var markle_tree_1 = require("../markle-tree");
+var command_factory_1 = require("./command-factory");
 var ZKPInputBuilder = /** @class */ (function () {
     function ZKPInputBuilder() {
         this.inputs = [];
@@ -59,16 +57,6 @@ var ZKPInputBuilder = /** @class */ (function () {
     };
     return ZKPInputBuilder;
 }());
-function createCommand(op, args) {
-    if (op.v.eqn(command_1.CommandOp.Deposit)) {
-        return new deposit_1.DepositCommand(args);
-    }
-    if (op.v.eqn(command_1.CommandOp.AddPool)) {
-        return new addpool_1.AddPoolCommand(args);
-    }
-    throw new Error('Not implemented yet');
-}
-exports.createCommand = createCommand;
 function shaCommand(op, command) {
     var data = [op].concat(command.args).concat([new field_1.Field(0)]).map(function (x) { return x.v.toString('hex', 64); }).join('');
     var hvalue = sha256_1.default(enc_hex_1.default.parse(data)).toString();
@@ -80,7 +68,7 @@ function shaCommand(op, command) {
 exports.shaCommand = shaCommand;
 function genZKPInput(op, args, storage) {
     var builder = new ZKPInputBuilder();
-    var command = createCommand(op, args);
+    var command = command_factory_1.createCommand(op, args);
     var shaValue = shaCommand(op, command);
     builder.push(shaValue);
     builder.pushCommand(op, command);

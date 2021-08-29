@@ -59,12 +59,13 @@ var MarkleTree = /** @class */ (function () {
     MarkleTree.prototype.get = function (index) {
         var _a, _b;
         var path = this._fillPath(index);
-        return (_b = (_a = path[path.length - 1].children[index & 3]) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : new field_1.Field(0);
+        return (_b = (_a = path[path.length - 1]) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : new field_1.Field(0);
     };
     MarkleTree.prototype.set = function (index, value) {
         var path = this._fillPath(index);
         var leaf = path.pop();
         leaf.value = value;
+        console.log('set value ' + value.v.toString(10));
         for (var level = 0; level <= exports.MaxHeight; level++) {
             var _curr = path.pop();
             _curr && this.updateNodeHash(_curr, level);
@@ -75,8 +76,9 @@ var MarkleTree = /** @class */ (function () {
             throw new Error("Invalid leaves length: " + values.length);
         }
         var path = this._fillPath(index);
+        path.pop();
         path[path.length - 1].children = values.map(function (value) { return ({ value: value, children: [] }); });
-        for (var level = 0; level <= exports.MaxHeight; level++) {
+        for (var level = 0; level < exports.MaxHeight; level++) {
             var _curr = path.pop();
             _curr && this.updateNodeHash(_curr, level);
         }

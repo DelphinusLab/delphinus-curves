@@ -1,26 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var field_1 = require("../field");
-var command_1 = require("./command");
-var main_1 = require("./main");
+var field_1 = require("../../field");
+var command_1 = require("../command");
+var main_1 = require("../main");
 var child_process_1 = require("child_process");
-/*
-const data = genZKPInput(
-  new Field(CommandOp.AddPool),
-  [
-    new Field(0),
-    new Field(0),
-    new Field(4),
-    new Field(5)
-  ],
-  new L2Storage()
-);
-*/
-var data = main_1.genZKPInput(new field_1.Field(command_1.CommandOp.Deposit), [
+var storage = new command_1.L2Storage();
+var _ = main_1.genZKPInput(new field_1.Field(command_1.CommandOp.Deposit), [
     new field_1.Field(0),
     new field_1.Field(4),
     new field_1.Field(100)
-], new command_1.L2Storage());
+], storage);
+var data = main_1.genZKPInput(new field_1.Field(command_1.CommandOp.Withdraw), [
+    new field_1.Field(0),
+    new field_1.Field(0),
+    new field_1.Field(0),
+    new field_1.Field(0),
+    new field_1.Field(4),
+    new field_1.Field(50),
+    new field_1.Field(0),
+], storage);
 console.log("zokrates compute-witness -a " + data.map(function (f) { return f.v.toString(10); }).join(" "));
 child_process_1.exec("zokrates compute-witness -a " + data.map(function (f) { return f.v.toString(10); }).join(" "), {
     cwd: "/home/shindar/Projects/delphinus/delphinus-zkp"

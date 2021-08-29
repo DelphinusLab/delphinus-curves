@@ -15,25 +15,30 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AddPoolCommand = void 0;
+exports.WithdrawCommand = void 0;
 var field_1 = require("../../field");
 var command_1 = require("../command");
-var AddPoolCommand = /** @class */ (function (_super) {
-    __extends(AddPoolCommand, _super);
-    function AddPoolCommand() {
+var WithdrawCommand = /** @class */ (function (_super) {
+    __extends(WithdrawCommand, _super);
+    function WithdrawCommand() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    AddPoolCommand.prototype.run = function (storage) {
+    WithdrawCommand.prototype.run = function (storage) {
         var path = [];
-        var poolIndex = this.args[1];
-        var tokenIndex0 = this.args[2];
-        var tokenIndex1 = this.args[3];
-        var index = command_1.getPoolStoreIndex(poolIndex.v.toNumber());
-        path.push(storage.getPath(index));
-        var zero = new field_1.Field(0);
-        storage.setLeaves(index, [tokenIndex0, tokenIndex1, zero, zero]);
+        var account = this.args[3];
+        var token = this.args[4];
+        var amount = this.args[5];
+        var nonce = this.args[6];
+        var index0 = command_1.getBalanceStoreIndex(account.v.toNumber(), 2);
+        path.push(storage.getPath(index0));
+        storage.set(index0, nonce.add(new field_1.Field(1)));
+        var index1 = command_1.getBalanceStoreIndex(account.v.toNumber(), token.v.toNumber());
+        path.push(storage.getPath(index1));
+        var balance = storage.get(index1);
+        console.log("balance " + balance.v.toString(10) + " amount " + amount.v.toString(10));
+        storage.set(index1, balance.sub(amount));
         return path;
     };
-    return AddPoolCommand;
+    return WithdrawCommand;
 }(command_1.Command));
-exports.AddPoolCommand = AddPoolCommand;
+exports.WithdrawCommand = WithdrawCommand;

@@ -73,7 +73,7 @@ export class MarkleTree {
 
   get(index: number) {
     const path = this._fillPath(index);
-    return path[path.length - 1].children[index & 3]?.value ?? new Field(0);
+    return path[path.length - 1]?.value ?? new Field(0);
   }
 
   set(index: number, value: Field) {
@@ -81,6 +81,7 @@ export class MarkleTree {
     const leaf = path.pop();
 
     leaf!.value = value;
+    console.log('set value ' + value.v.toString(10));
 
     for (let level = 0; level <= MaxHeight; level++) {
       const _curr = path.pop();
@@ -94,9 +95,10 @@ export class MarkleTree {
     }
 
     const path = this._fillPath(index);
+    path.pop();
     path[path.length - 1].children = values.map(value => ({ value, children: [] }));
 
-    for (let level = 0; level <= MaxHeight; level++) {
+    for (let level = 0; level < MaxHeight; level++) {
       const _curr = path.pop();
       _curr && this.updateNodeHash(_curr, level);
     }

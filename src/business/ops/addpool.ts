@@ -1,6 +1,6 @@
-import { Field } from "../field";
-import { PathInfo } from "../markle-tree";
-import { Command, L2Storage, getPoolStoreIndex } from "./command";
+import { Field } from "../../field";
+import { PathInfo } from "../../markle-tree";
+import { Command, L2Storage, getPoolStoreIndex } from "../command";
 
 export class AddPoolCommand extends Command {
   run(storage: L2Storage): PathInfo[] {

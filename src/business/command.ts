@@ -4,6 +4,7 @@ import { MarkleTree, PathInfo } from "../markle-tree";
 
 export enum CommandOp {
   Deposit = 0,
+  Withdraw = 1,
   AddPool = 5,
 };
 

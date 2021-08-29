@@ -1,6 +1,6 @@
-import { Field } from "../field";
-import { CommandOp, L2Storage } from "./command";
-import { genZKPInput } from "./main";
+import { Field } from "../../field";
+import { CommandOp, L2Storage } from "../command";
+import { genZKPInput } from "../main";
 import { exec } from "child_process";
 
 /*
@@ -26,10 +26,10 @@ const data = genZKPInput(
   new L2Storage()
 );
 
-console.log(`zokrates compute-witness -a ${data.map(f => f.v.toString(10)).join(" ")}`);
+console.log(`zokrates compute-witness -a ${data.map((f: Field) => f.v.toString(10)).join(" ")}`);
 
 exec(
-  `zokrates compute-witness -a ${data.map(f => f.v.toString(10)).join(" ")}`,
+  `zokrates compute-witness -a ${data.map((f: Field) => f.v.toString(10)).join(" ")}`,
   {
     cwd: "/home/shindar/Projects/delphinus/delphinus-zkp"
   },
