@@ -66,10 +66,17 @@ var MarkleTree = /** @class */ (function () {
         var leaf = path.pop();
         leaf.value = value;
         console.log('set value ' + value.v.toString(10));
-        for (var level = 0; level <= exports.MaxHeight; level++) {
+        for (var level = 1; level <= exports.MaxHeight; level++) {
             var _curr = path.pop();
             _curr && this.updateNodeHash(_curr, level);
         }
+        console.log('root hash is ' + this.root.value.v.toString(10));
+    };
+    MarkleTree.prototype.getLeaves = function (index) {
+        var _a;
+        var path = this._fillPath(index);
+        path.pop();
+        return (_a = path[path.length - 1]) === null || _a === void 0 ? void 0 : _a.children.map(function (child) { var _a; return (_a = child === null || child === void 0 ? void 0 : child.value) !== null && _a !== void 0 ? _a : new field_1.Field(0); });
     };
     MarkleTree.prototype.setLeaves = function (index, values) {
         if (values.length != 4) {
@@ -77,14 +84,17 @@ var MarkleTree = /** @class */ (function () {
         }
         var path = this._fillPath(index);
         path.pop();
+        console.log('set value ' + values.map(function (x) { return x.v.toString(10); }).join(' '));
+        console.log('path length ' + path.length);
         path[path.length - 1].children = values.map(function (value) { return ({ value: value, children: [] }); });
-        for (var level = 0; level < exports.MaxHeight; level++) {
+        for (var level = 1; level <= exports.MaxHeight; level++) {
             var _curr = path.pop();
             _curr && this.updateNodeHash(_curr, level);
         }
+        console.log('root hash is ' + this.root.value.v.toString(10));
     };
     MarkleTree.prototype.updateNodeHash = function (node, level) {
-        node.value = hash(node.children.map(function (n) { var _a; return (_a = n === null || n === void 0 ? void 0 : n.value) !== null && _a !== void 0 ? _a : MarkleTree.emptyNodeHash(level); }));
+        node.value = hash(node.children.map(function (n) { var _a; return (_a = n === null || n === void 0 ? void 0 : n.value) !== null && _a !== void 0 ? _a : MarkleTree.emptyNodeHash(level - 1); }));
     };
     MarkleTree.emptyHashes = [];
     return MarkleTree;

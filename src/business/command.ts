@@ -5,6 +5,7 @@ import { MarkleTree, PathInfo } from "../markle-tree";
 export enum CommandOp {
   Deposit = 0,
   Withdraw = 1,
+  Supply = 3,
   AddPool = 5,
 };
 
@@ -48,6 +49,11 @@ export function getPoolStoreIndex(poolIndex: number) {
 export function getBalanceStoreIndex(accountIndex: number, tokenIndex: number) {
   return (StoreNameSpace.BalanceStore << 30) | (accountIndex << 10) | tokenIndex;
 }
+
+export function getShareStoreIndex(accountIndex: number, poolIndex: number) {
+  return (StoreNameSpace.ShareStore << 30) | (accountIndex << 10) | poolIndex;
+}
+
 
 export class L2Storage extends MarkleTree {
   getPoolToken0Info(index: number) {

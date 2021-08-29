@@ -83,10 +83,18 @@ export class MarkleTree {
     leaf!.value = value;
     console.log('set value ' + value.v.toString(10));
 
-    for (let level = 0; level <= MaxHeight; level++) {
+    for (let level = 1; level <= MaxHeight; level++) {
       const _curr = path.pop();
       _curr && this.updateNodeHash(_curr, level);
     }
+
+    console.log('root hash is ' + this.root.value.v.toString(10));
+  }
+
+  getLeaves(index: number) {
+    const path = this._fillPath(index);
+    path.pop()
+    return path[path.length - 1]?.children.map(child => child?.value ?? new Field(0));
   }
 
   setLeaves(index: number, values: Field[]) {
@@ -96,15 +104,20 @@ export class MarkleTree {
 
     const path = this._fillPath(index);
     path.pop();
+
+    console.log('set value ' + values.map((x: Field) => x.v.toString(10)).join(' '));
+    console.log('path length ' + path.length);
     path[path.length - 1].children = values.map(value => ({ value, children: [] }));
 
-    for (let level = 0; level < MaxHeight; level++) {
+    for (let level = 1; level <= MaxHeight; level++) {
       const _curr = path.pop();
       _curr && this.updateNodeHash(_curr, level);
     }
+
+    console.log('root hash is ' + this.root.value.v.toString(10));
   }
 
   updateNodeHash(node: Node, level: number) {
-    node.value = hash(node.children.map(n => n?.value ?? MarkleTree.emptyNodeHash(level)));
+    node.value = hash(node.children.map(n => n?.value ?? MarkleTree.emptyNodeHash(level - 1)));
   }
 }

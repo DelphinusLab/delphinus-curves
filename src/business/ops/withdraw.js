@@ -35,7 +35,6 @@ var WithdrawCommand = /** @class */ (function (_super) {
         var index1 = command_1.getBalanceStoreIndex(account.v.toNumber(), token.v.toNumber());
         path.push(storage.getPath(index1));
         var balance = storage.get(index1);
-        console.log("balance " + balance.v.toString(10) + " amount " + amount.v.toString(10));
         storage.set(index1, balance.sub(amount));
         return path;
     };

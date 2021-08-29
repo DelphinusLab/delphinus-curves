@@ -13,7 +13,6 @@ export class WithdrawCommand extends Command {
 
     const index0 = getBalanceStoreIndex(account.v.toNumber(), 2);
     path.push(storage.getPath(index0));
-
     storage.set(index0, nonce.add(new Field(1)));
 
     const index1 = getBalanceStoreIndex(account.v.toNumber(), token.v.toNumber());

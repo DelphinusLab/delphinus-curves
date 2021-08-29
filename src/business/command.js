@@ -15,13 +15,14 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.L2Storage = exports.getBalanceStoreIndex = exports.getPoolStoreIndex = exports.Index = exports.StoreNameSpace = exports.Command = exports.CommandOp = void 0;
+exports.L2Storage = exports.getShareStoreIndex = exports.getBalanceStoreIndex = exports.getPoolStoreIndex = exports.Index = exports.StoreNameSpace = exports.Command = exports.CommandOp = void 0;
 var field_1 = require("../field");
 var markle_tree_1 = require("../markle-tree");
 var CommandOp;
 (function (CommandOp) {
     CommandOp[CommandOp["Deposit"] = 0] = "Deposit";
     CommandOp[CommandOp["Withdraw"] = 1] = "Withdraw";
+    CommandOp[CommandOp["Supply"] = 3] = "Supply";
     CommandOp[CommandOp["AddPool"] = 5] = "AddPool";
 })(CommandOp = exports.CommandOp || (exports.CommandOp = {}));
 ;
@@ -66,6 +67,10 @@ function getBalanceStoreIndex(accountIndex, tokenIndex) {
     return (StoreNameSpace.BalanceStore << 30) | (accountIndex << 10) | tokenIndex;
 }
 exports.getBalanceStoreIndex = getBalanceStoreIndex;
+function getShareStoreIndex(accountIndex, poolIndex) {
+    return (StoreNameSpace.ShareStore << 30) | (accountIndex << 10) | poolIndex;
+}
+exports.getShareStoreIndex = getShareStoreIndex;
 var L2Storage = /** @class */ (function (_super) {
     __extends(L2Storage, _super);
     function L2Storage() {
