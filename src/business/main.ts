@@ -1,10 +1,11 @@
 import { Field } from "../field";
 import { MaxHeight, PathInfo } from "../markle-tree";
-import { AddPoolCommand } from "./addpool";
-import { Command, L2Storage } from "./command";
+import { AddPoolCommand } from "./ops/addpool";
+import { Command, CommandOp, L2Storage } from "./command";
 import sha256 from 'crypto-js/sha256';
 import hexEnc from 'crypto-js/enc-hex';
 import BN from "bn.js";
+import { DepositCommand } from "./ops/deposit";
 
 class ZKPInputBuilder {
   inputs: Field[] = [];
@@ -57,7 +58,11 @@ class ZKPInputBuilder {
 }
 
 export function createCommand(op: Field, args: Field[]) {
-  if (op.v.eqn(5)) {
+  if (op.v.eqn(CommandOp.Deposit)) {
+    return new DepositCommand(args);
+  }
+
+  if (op.v.eqn(CommandOp.AddPool)) {
     return new AddPoolCommand(args);
   }
 
@@ -77,7 +82,7 @@ export function shaCommand(op: Field, command: Command) {
 
 export function genZKPInput(op: Field, args: Field[], storage: L2Storage): Field[] {
   const builder = new ZKPInputBuilder();
-  const command = createCommand(op, args);
+  const command = createCommand(op, args) as Command;
 
   const shaValue = shaCommand(op, command);
   builder.push(shaValue);

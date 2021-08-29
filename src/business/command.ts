@@ -2,6 +2,11 @@ import BN from "bn.js";
 import { Field } from "../field";
 import { MarkleTree, PathInfo } from "../markle-tree";
 
+export enum CommandOp {
+  Deposit = 0,
+  AddPool = 5,
+};
+
 export class Command {
   args: Field[];
 
@@ -20,7 +25,7 @@ export enum StoreNameSpace {
   ShareStore = 2,
 }
 
-export class PoolStoreIndex {
+export class Index {
   poolIndex: number;
 
   get index() {
@@ -33,6 +38,14 @@ export class PoolStoreIndex {
     }
     this.poolIndex = poolIndex;
   }
+}
+
+export function getPoolStoreIndex(poolIndex: number) {
+  return (StoreNameSpace.PoolStore << 30) | (poolIndex << 20);
+}
+
+export function getBalanceStoreIndex(accountIndex: number, tokenIndex: number) {
+  return (StoreNameSpace.BalanceStore << 30) | (accountIndex << 10) | tokenIndex;
 }
 
 export class L2Storage extends MarkleTree {

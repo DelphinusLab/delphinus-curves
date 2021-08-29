@@ -28,7 +28,7 @@ var AddPoolCommand = /** @class */ (function (_super) {
         var poolIndex = this.args[1];
         var tokenIndex0 = this.args[2];
         var tokenIndex1 = this.args[3];
-        var index = new command_1.PoolStoreIndex(poolIndex.v.toNumber()).index;
+        var index = command_1.getPoolStoreIndex(poolIndex.v.toNumber());
         path.push(storage.getPath(index));
         var zero = new field_1.Field(0);
         storage.setLeaves(index, [tokenIndex0, tokenIndex1, zero, zero]);

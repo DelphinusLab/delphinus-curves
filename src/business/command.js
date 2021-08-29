@@ -15,9 +15,15 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.L2Storage = exports.PoolStoreIndex = exports.StoreNameSpace = exports.Command = void 0;
+exports.L2Storage = exports.getBalanceStoreIndex = exports.getPoolStoreIndex = exports.Index = exports.StoreNameSpace = exports.Command = exports.CommandOp = void 0;
 var field_1 = require("../field");
 var markle_tree_1 = require("../markle-tree");
+var CommandOp;
+(function (CommandOp) {
+    CommandOp[CommandOp["Deposit"] = 0] = "Deposit";
+    CommandOp[CommandOp["AddPool"] = 5] = "AddPool";
+})(CommandOp = exports.CommandOp || (exports.CommandOp = {}));
+;
 var Command = /** @class */ (function () {
     function Command(args) {
         this.args = args.concat(Array(8).fill(new field_1.Field(0))).slice(0, 8);
@@ -34,23 +40,31 @@ var StoreNameSpace;
     StoreNameSpace[StoreNameSpace["PoolStore"] = 1] = "PoolStore";
     StoreNameSpace[StoreNameSpace["ShareStore"] = 2] = "ShareStore";
 })(StoreNameSpace = exports.StoreNameSpace || (exports.StoreNameSpace = {}));
-var PoolStoreIndex = /** @class */ (function () {
-    function PoolStoreIndex(poolIndex) {
+var Index = /** @class */ (function () {
+    function Index(poolIndex) {
         if (poolIndex < 0 || poolIndex >= 1024) {
             throw new Error("Bad pool index: " + poolIndex);
         }
         this.poolIndex = poolIndex;
     }
-    Object.defineProperty(PoolStoreIndex.prototype, "index", {
+    Object.defineProperty(Index.prototype, "index", {
         get: function () {
             return (StoreNameSpace.PoolStore << 30) | (this.poolIndex << 20);
         },
         enumerable: false,
         configurable: true
     });
-    return PoolStoreIndex;
+    return Index;
 }());
-exports.PoolStoreIndex = PoolStoreIndex;
+exports.Index = Index;
+function getPoolStoreIndex(poolIndex) {
+    return (StoreNameSpace.PoolStore << 30) | (poolIndex << 20);
+}
+exports.getPoolStoreIndex = getPoolStoreIndex;
+function getBalanceStoreIndex(accountIndex, tokenIndex) {
+    return (StoreNameSpace.BalanceStore << 30) | (accountIndex << 10) | tokenIndex;
+}
+exports.getBalanceStoreIndex = getBalanceStoreIndex;
 var L2Storage = /** @class */ (function (_super) {
     __extends(L2Storage, _super);
     function L2Storage() {

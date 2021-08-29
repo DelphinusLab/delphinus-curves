@@ -3,19 +3,6 @@ import { CommandOp, L2Storage } from "./command";
 import { genZKPInput } from "./main";
 import { exec } from "child_process";
 
-/*
-const data = genZKPInput(
-  new Field(CommandOp.AddPool),
-  [
-    new Field(0),
-    new Field(0),
-    new Field(4),
-    new Field(5)
-  ],
-  new L2Storage()
-);
-*/
-
 const data = genZKPInput(
   new Field(CommandOp.Deposit),
   [

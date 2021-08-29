@@ -60,7 +60,7 @@ export class MarkleTree {
     let curr: Node  = this.root;
     path.push(curr);
 
-    for (let level = MaxHeight - 1; level > 0; level--) {
+    for (let level = MaxHeight - 1; level >= 0; level--) {
       const offset = (index >> (level * 2)) & 3;
       const next = curr.children[offset] ?? MarkleTree.emptyNode(level);
       curr.children[offset] = next;
@@ -78,11 +78,9 @@ export class MarkleTree {
 
   set(index: number, value: Field) {
     const path = this._fillPath(index);
-    const leaf = path[path.length - 1].children[index & 3];
+    const leaf = path.pop();
 
-    if (leaf) {
-      leaf.value = value;
-    }
+    leaf!.value = value;
 
     for (let level = 0; level <= MaxHeight; level++) {
       const _curr = path.pop();

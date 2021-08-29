@@ -47,7 +47,7 @@ var MarkleTree = /** @class */ (function () {
         var path = [];
         var curr = this.root;
         path.push(curr);
-        for (var level = exports.MaxHeight - 1; level > 0; level--) {
+        for (var level = exports.MaxHeight - 1; level >= 0; level--) {
             var offset = (index >> (level * 2)) & 3;
             var next = (_a = curr.children[offset]) !== null && _a !== void 0 ? _a : MarkleTree.emptyNode(level);
             curr.children[offset] = next;
@@ -63,10 +63,8 @@ var MarkleTree = /** @class */ (function () {
     };
     MarkleTree.prototype.set = function (index, value) {
         var path = this._fillPath(index);
-        var leaf = path[path.length - 1].children[index & 3];
-        if (leaf) {
-            leaf.value = value;
-        }
+        var leaf = path.pop();
+        leaf.value = value;
         for (var level = 0; level <= exports.MaxHeight; level++) {
             var _curr = path.pop();
             _curr && this.updateNodeHash(_curr, level);

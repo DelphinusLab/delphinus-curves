@@ -1,6 +1,6 @@
 import { Field } from "../field";
 import { PathInfo } from "../markle-tree";
-import { Command, L2Storage, PoolStoreIndex } from "./command";
+import { Command, L2Storage, getPoolStoreIndex } from "./command";
 
 export class AddPoolCommand extends Command {
   run(storage: L2Storage): PathInfo[] {
@@ -10,7 +10,7 @@ export class AddPoolCommand extends Command {
     const tokenIndex0 = this.args[2];
     const tokenIndex1 = this.args[3];
 
-    const index = new PoolStoreIndex(poolIndex.v.toNumber()).index;
+    const index = getPoolStoreIndex(poolIndex.v.toNumber());
     path.push(storage.getPath(index));
 
     const zero = new Field(0);

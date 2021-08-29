@@ -7,9 +7,11 @@ exports.genZKPInput = exports.shaCommand = exports.createCommand = void 0;
 var field_1 = require("../field");
 var markle_tree_1 = require("../markle-tree");
 var addpool_1 = require("./addpool");
+var command_1 = require("./command");
 var sha256_1 = __importDefault(require("crypto-js/sha256"));
 var enc_hex_1 = __importDefault(require("crypto-js/enc-hex"));
 var bn_js_1 = __importDefault(require("bn.js"));
+var deposit_1 = require("./deposit");
 var ZKPInputBuilder = /** @class */ (function () {
     function ZKPInputBuilder() {
         this.inputs = [];
@@ -58,7 +60,10 @@ var ZKPInputBuilder = /** @class */ (function () {
     return ZKPInputBuilder;
 }());
 function createCommand(op, args) {
-    if (op.v.eqn(5)) {
+    if (op.v.eqn(command_1.CommandOp.Deposit)) {
+        return new deposit_1.DepositCommand(args);
+    }
+    if (op.v.eqn(command_1.CommandOp.AddPool)) {
         return new addpool_1.AddPoolCommand(args);
     }
     throw new Error('Not implemented yet');
