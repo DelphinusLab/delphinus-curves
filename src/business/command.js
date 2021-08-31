@@ -21,8 +21,10 @@ var markle_tree_1 = require("../markle-tree");
 var CommandOp;
 (function (CommandOp) {
     CommandOp[CommandOp["Deposit"] = 0] = "Deposit";
+    CommandOp[CommandOp["Swap"] = 2] = "Swap";
     CommandOp[CommandOp["Withdraw"] = 1] = "Withdraw";
     CommandOp[CommandOp["Supply"] = 3] = "Supply";
+    CommandOp[CommandOp["Retrieve"] = 4] = "Retrieve";
     CommandOp[CommandOp["AddPool"] = 5] = "AddPool";
 })(CommandOp = exports.CommandOp || (exports.CommandOp = {}));
 ;

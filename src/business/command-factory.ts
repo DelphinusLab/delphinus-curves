@@ -2,7 +2,9 @@ import { Field } from "../field";
 import { CommandOp } from "./command";
 import { AddPoolCommand } from "./ops/addpool";
 import { DepositCommand } from "./ops/deposit";
+import { RetrieveCommand } from "./ops/retrieve";
 import { SupplyCommand } from "./ops/supply";
+import { SwapCommand } from "./ops/swap";
 import { WithdrawCommand } from "./ops/withdraw";
 
 export function createCommand(op: Field, args: Field[]) {
@@ -14,8 +16,16 @@ export function createCommand(op: Field, args: Field[]) {
     return new WithdrawCommand(args);
   }
 
+  if (op.v.eqn(CommandOp.Swap)) {
+    return new SwapCommand(args);
+  }
+
   if (op.v.eqn(CommandOp.Supply)) {
     return new SupplyCommand(args);
+  }
+
+  if (op.v.eqn(CommandOp.Retrieve)) {
+    return new RetrieveCommand(args);
   }
 
   if (op.v.eqn(CommandOp.AddPool)) {

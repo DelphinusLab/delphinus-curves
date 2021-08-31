@@ -19,6 +19,8 @@ class ZKPInputBuilder {
   }
 
   _pushPathInfo(pathInfo: PathInfo) {
+    this.push(pathInfo.root);
+
     for (let i = 0; i < 32; i++) {
       this.push(new Field((pathInfo.index >> (31 - i)) & 1));
     }
@@ -27,28 +29,19 @@ class ZKPInputBuilder {
     }
   }
 
-  pushPathInfo(pathInfoList: PathInfo[]) {
+  pushPathInfo(pathInfoList: PathInfo[], storage: L2Storage) {
     for (const pathInfo of pathInfoList) {
       this._pushPathInfo(pathInfo);
     }
 
     for (let i = 0; i < 5 - pathInfoList.length; i++) {
-      this._pushEmptyPathInfo();
-    }
-  }
-
-  _pushEmptyPathInfo() {
-    for (let i = 0; i < 32; i++) {
-      this.push(new Field(0));
-    }
-    for (let i = 0; i < MaxHeight; i++) {
-      this.push(Array(4).fill(new Field(0)));
+      this._pushPathInfo(storage.getPath(0));
     }
   }
 
   pushCommand(op: Field, command: Command) {
     this.push(op);
-    console.log(command.args);
+    //console.log(command.args);
     this.push(command.args);
   }
 
@@ -76,10 +69,8 @@ export function genZKPInput(op: Field, args: Field[], storage: L2Storage): Field
   builder.push(shaValue);
   builder.pushCommand(op, command);
 
-  builder.pushRootHash(storage);
-
   const pathInfo = command.run(storage);
-  builder.pushPathInfo(pathInfo);
+  builder.pushPathInfo(pathInfo, storage);
 
   builder.pushRootHash(storage);
   return builder.inputs;

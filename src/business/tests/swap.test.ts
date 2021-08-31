@@ -37,7 +37,7 @@ const _2 = genZKPInput(
   storage
 );
 
-const data = genZKPInput(
+const _3 = genZKPInput(
   new Field(CommandOp.Supply),
   [
     new Field(0),
@@ -48,6 +48,21 @@ const data = genZKPInput(
     new Field(10),
     new Field(10),
     new Field(0)
+  ],
+  storage
+);
+
+const data = genZKPInput(
+  new Field(CommandOp.Swap),
+  [
+    new Field(0),
+    new Field(0),
+    new Field(0),
+    new Field(0),
+    new Field(0),
+    new Field(5),
+    new Field(0),
+    new Field(1)
   ],
   storage
 );

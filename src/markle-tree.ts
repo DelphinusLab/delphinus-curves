@@ -10,6 +10,7 @@ export interface Node {
 }
 
 export interface PathInfo {
+  root: Field;
   index: number;
   pathDigests: Field[][];
 }
@@ -40,7 +41,8 @@ export class MarkleTree {
 
   getPath(index: number): PathInfo {
     const ret = {
-      index,
+      root: this.root.value,
+      index: index,
       pathDigests: [] as Field[][]
     };
 
@@ -76,25 +78,32 @@ export class MarkleTree {
     return path[path.length - 1]?.value ?? new Field(0);
   }
 
+  getLeaves(index: number) {
+    const path = this._fillPath(index);
+    path.pop()
+    return path[path.length - 1]?.children.map(child => child?.value ?? new Field(0));
+  }
+
+  _updateHash(path: Node[]) {
+    for (let level = 1; level <= MaxHeight; level++) {
+      const _curr = path.pop()!;
+      const _childrenValues = _curr.children.map(n => n?.value ?? MarkleTree.emptyNodeHash(level - 1));
+      _curr.value = hash(_childrenValues);
+
+      //console.log(`level ${level}`);
+      //console.log(`children ${_childrenValues.map(v => v.v.toString(10)).join(", ")}`);
+      //console.log(`hash ${_curr.value.v.toString(10)}`);
+    }
+  }
+
   set(index: number, value: Field) {
     const path = this._fillPath(index);
     const leaf = path.pop();
 
     leaf!.value = value;
-    console.log('set value ' + value.v.toString(10));
-
-    for (let level = 1; level <= MaxHeight; level++) {
-      const _curr = path.pop();
-      _curr && this.updateNodeHash(_curr, level);
-    }
-
-    console.log('root hash is ' + this.root.value.v.toString(10));
-  }
-
-  getLeaves(index: number) {
-    const path = this._fillPath(index);
-    path.pop()
-    return path[path.length - 1]?.children.map(child => child?.value ?? new Field(0));
+    //console.log('set value ' + value.v.toString(10));
+    this._updateHash(path);
+    //console.log('root hash is ' + this.root.value.v.toString(10));
   }
 
   setLeaves(index: number, values: Field[]) {
@@ -103,21 +112,15 @@ export class MarkleTree {
     }
 
     const path = this._fillPath(index);
-    path.pop();
+    const _leaf = path.pop();
 
-    console.log('set value ' + values.map((x: Field) => x.v.toString(10)).join(' '));
-    console.log('path length ' + path.length);
+    //console.log('set values ' + values.map(value => value.v.toString(10)).join(" "));
     path[path.length - 1].children = values.map(value => ({ value, children: [] }));
-
-    for (let level = 1; level <= MaxHeight; level++) {
-      const _curr = path.pop();
-      _curr && this.updateNodeHash(_curr, level);
-    }
-
-    console.log('root hash is ' + this.root.value.v.toString(10));
+    this._updateHash(path);
+    //console.log('root hash is ' + this.root.value.v.toString(10));
   }
 
   updateNodeHash(node: Node, level: number) {
-    node.value = hash(node.children.map(n => n?.value ?? MarkleTree.emptyNodeHash(level - 1)));
+   
   }
 }

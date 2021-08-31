@@ -21,7 +21,7 @@ var _2 = main_1.genZKPInput(new field_1.Field(command_1.CommandOp.Deposit), [
     new field_1.Field(5),
     new field_1.Field(100)
 ], storage);
-var data = main_1.genZKPInput(new field_1.Field(command_1.CommandOp.Supply), [
+var _3 = main_1.genZKPInput(new field_1.Field(command_1.CommandOp.Supply), [
     new field_1.Field(0),
     new field_1.Field(0),
     new field_1.Field(0),
@@ -30,6 +30,16 @@ var data = main_1.genZKPInput(new field_1.Field(command_1.CommandOp.Supply), [
     new field_1.Field(10),
     new field_1.Field(10),
     new field_1.Field(0)
+], storage);
+var data = main_1.genZKPInput(new field_1.Field(command_1.CommandOp.Retrieve), [
+    new field_1.Field(0),
+    new field_1.Field(0),
+    new field_1.Field(0),
+    new field_1.Field(0),
+    new field_1.Field(0),
+    new field_1.Field(5),
+    new field_1.Field(5),
+    new field_1.Field(1)
 ], storage);
 console.log("zokrates compute-witness -a " + data.map(function (f) { return f.v.toString(10); }).join(" "));
 child_process_1.exec("zokrates compute-witness -a " + data.map(function (f) { return f.v.toString(10); }).join(" "), {

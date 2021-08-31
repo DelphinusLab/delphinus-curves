@@ -23,6 +23,7 @@ var ZKPInputBuilder = /** @class */ (function () {
         }
     };
     ZKPInputBuilder.prototype._pushPathInfo = function (pathInfo) {
+        this.push(pathInfo.root);
         for (var i = 0; i < 32; i++) {
             this.push(new field_1.Field((pathInfo.index >> (31 - i)) & 1));
         }
@@ -30,26 +31,18 @@ var ZKPInputBuilder = /** @class */ (function () {
             this.push(pathInfo.pathDigests[i].slice(0, 4));
         }
     };
-    ZKPInputBuilder.prototype.pushPathInfo = function (pathInfoList) {
+    ZKPInputBuilder.prototype.pushPathInfo = function (pathInfoList, storage) {
         for (var _i = 0, pathInfoList_1 = pathInfoList; _i < pathInfoList_1.length; _i++) {
             var pathInfo = pathInfoList_1[_i];
             this._pushPathInfo(pathInfo);
         }
         for (var i = 0; i < 5 - pathInfoList.length; i++) {
-            this._pushEmptyPathInfo();
-        }
-    };
-    ZKPInputBuilder.prototype._pushEmptyPathInfo = function () {
-        for (var i = 0; i < 32; i++) {
-            this.push(new field_1.Field(0));
-        }
-        for (var i = 0; i < markle_tree_1.MaxHeight; i++) {
-            this.push(Array(4).fill(new field_1.Field(0)));
+            this._pushPathInfo(storage.getPath(0));
         }
     };
     ZKPInputBuilder.prototype.pushCommand = function (op, command) {
         this.push(op);
-        console.log(command.args);
+        //console.log(command.args);
         this.push(command.args);
     };
     ZKPInputBuilder.prototype.pushRootHash = function (storage) {
@@ -72,9 +65,8 @@ function genZKPInput(op, args, storage) {
     var shaValue = shaCommand(op, command);
     builder.push(shaValue);
     builder.pushCommand(op, command);
-    builder.pushRootHash(storage);
     var pathInfo = command.run(storage);
-    builder.pushPathInfo(pathInfo);
+    builder.pushPathInfo(pathInfo, storage);
     builder.pushRootHash(storage);
     return builder.inputs;
 }
