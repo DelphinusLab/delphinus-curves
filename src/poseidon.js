@@ -1,8 +1,12 @@
 "use strict";
-var __spreadArray = (this && this.__spreadArray) || function (to, from) {
-    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
-        to[j] = from[i];
-    return to;
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.poseidon = void 0;
@@ -19,7 +23,7 @@ function poseidon(inputs) {
     var t = inputs.length + 1;
     var nRoundsF = N_ROUNDS_F;
     var nRoundsP = N_ROUNDS_P[t - 2];
-    var state = __spreadArray([new field_1.Field(0)], inputs);
+    var state = __spreadArray([new field_1.Field(0)], inputs, true);
     var _loop_1 = function (r) {
         state = state.map(function (a, i) { return a.add(new field_1.Field(new bn_js_1.BN(poseidon_constants_1.C[t - 2][r * t + i], 'hex'))); });
         if (r < nRoundsF / 2 || r >= nRoundsF / 2 + nRoundsP) {

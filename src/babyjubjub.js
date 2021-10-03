@@ -169,7 +169,7 @@ var PrivateKey = /** @class */ (function () {
         content = content.concat(Rx.v.toArray("be", 32));
         content = content.concat(Ax.v.toArray("be", 32));
         content = content.concat(message);
-        var H = new bn_js_1.default(sha256_1.default(content), "hex");
+        var H = new bn_js_1.default((0, sha256_1.default)(content), "hex");
         console.log(H.toArray());
         var S = r.add(this.key.mul(new CurveField(H)));
         return [[R.x.v, R.y.v], S.v];

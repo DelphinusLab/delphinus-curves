@@ -4,55 +4,59 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Field = void 0;
-const bn_js_1 = __importDefault(require("bn.js"));
-class Field {
-    constructor(v) {
+var bn_js_1 = __importDefault(require("bn.js"));
+var Field = /** @class */ (function () {
+    function Field(v) {
         if (!(v instanceof bn_js_1.default)) {
             v = new bn_js_1.default(v);
         }
         this.v = v.umod(this.modulus);
     }
-    get modulus() {
-        return new bn_js_1.default("21888242871839275222246405745257275088548364400416034343698204186575808495617", 10);
-    }
-    add(f) {
+    Object.defineProperty(Field.prototype, "modulus", {
+        get: function () {
+            return new bn_js_1.default("21888242871839275222246405745257275088548364400416034343698204186575808495617", 10);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Field.prototype.add = function (f) {
         return new Field(this.v.add(f.v));
-    }
-    mul(f) {
+    };
+    Field.prototype.mul = function (f) {
         return new Field(this.v.mul(f.v));
-    }
-    sub(f) {
+    };
+    Field.prototype.sub = function (f) {
         return new Field(this.v.sub(f.v));
-    }
-    neg() {
+    };
+    Field.prototype.neg = function () {
         return new Field(this.v.neg());
-    }
-    div(f) {
+    };
+    Field.prototype.div = function (f) {
         return new Field(this.v.mul(f.inv().v));
-    }
+    };
     //see, https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm#Polynomial_extended_Euclidean_algorithm
-    inv() {
+    Field.prototype.inv = function () {
         if (this.v.eqn(0)) {
             return this;
         }
-        let newt = new bn_js_1.default(1);
-        let t = new bn_js_1.default(0);
-        let newr = this.v;
-        let r = this.modulus;
-        let op = (x, newx, q) => {
+        var newt = new bn_js_1.default(1);
+        var t = new bn_js_1.default(0);
+        var newr = this.v;
+        var r = this.modulus;
+        var op = function (x, newx, q) {
             return [newx, x.sub(q.mul(newx))];
         };
         while (!newr.eqn(0)) {
-            let q = r.div(newr);
-            let t_newt = op(t, newt, q);
+            var q = r.div(newr);
+            var t_newt = op(t, newt, q);
             t = t_newt[0];
             newt = t_newt[1];
-            let r_newr = op(r, newr, q);
+            var r_newr = op(r, newr, q);
             r = r_newr[0];
             newr = r_newr[1];
         }
         return new Field(t);
-    }
-}
+    };
+    return Field;
+}());
 exports.Field = Field;
-//# sourceMappingURL=field.js.map
