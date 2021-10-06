@@ -57,7 +57,7 @@ var MarkleTree = /** @class */ (function () {
         }
         return path;
     };
-    MarkleTree.prototype.get = function (index) {
+    MarkleTree.prototype.getLeave = function (index) {
         var _a, _b;
         var path = this._fillPath(index);
         return (_b = (_a = path[path.length - 1]) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : new field_1.Field(0);
@@ -78,7 +78,7 @@ var MarkleTree = /** @class */ (function () {
             _loop_2(level);
         }
     };
-    MarkleTree.prototype.set = function (index, value) {
+    MarkleTree.prototype.setLeave = function (index, value) {
         var path = this._fillPath(index);
         var leaf = path.pop();
         leaf.value = value;
@@ -97,7 +97,8 @@ var MarkleTree = /** @class */ (function () {
         this._updateHash(path);
         //console.log('root hash is ' + this.root.value.v.toString(10));
     };
-    MarkleTree.prototype.updateNodeHash = function (node, level) {
+    MarkleTree.prototype.getRoot = function () {
+        return this.root.value;
     };
     MarkleTree.emptyHashes = [];
     return MarkleTree;

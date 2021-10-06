@@ -3,7 +3,8 @@ import { poseidon } from "./poseidon";
 
 const hash = poseidon;
 export const MaxHeight = 16;
-export const BlockSize = 4;
+export const BlockShift = 2;
+export const BlockSize = 1 << BlockShift;
 
 export interface PathInfo {
   root: Field;
@@ -28,11 +29,18 @@ export class MarkleTree {
   data: Map<string, Field> = new Map();
 
   private async getNode(mtIndex: string) {
+    if (mtIndex.startsWith("-")) {
+      throw new Error(mtIndex);
+    }
     return this.data.get(mtIndex + "I");
   }
 
+  private async setNode(mtIndex: string, value: Field) {
+    return this.data.set(mtIndex + "I", value);
+  }
+
   private async getNodeOrDefault(mtIndex: string) {
-    let value = await this.getNode(mtIndex + "I");
+    let value = await this.getNode(mtIndex);
     if (value === undefined) {
       value = MarkleTree.emptyNodeHash(mtIndex.length);
     }
@@ -40,7 +48,7 @@ export class MarkleTree {
   }
 
   private async getNodeOrCreate(mtIndex: string) {
-    let value = await this.getNode(mtIndex + "I");
+    let value = await this.getNode(mtIndex);
     if (value === undefined) {
       value = MarkleTree.emptyNodeHash(mtIndex.length);
       await this.setNode(mtIndex, value);
@@ -48,12 +56,13 @@ export class MarkleTree {
     return value;
   }
 
-  private async setNode(mtIndex: string, value: Field) {
-    return this.data.set(mtIndex + "I", value);
-  }
-
   private convertToMtIndex(index: number) {
-    return index.toString(BlockSize);
+    // toString() may get negative value
+    let ret = "";
+    for (let i = 0; i < MaxHeight; i++) {
+      ret = ((index >> (i * 2)) & 3).toString() + ret;
+    }
+    return ret;
   }
 
   private async fillPath(index: number) {

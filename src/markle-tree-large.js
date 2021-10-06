@@ -36,12 +36,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MarkleTree = exports.BlockSize = exports.MaxHeight = void 0;
+exports.MarkleTree = exports.BlockSize = exports.BlockShift = exports.MaxHeight = void 0;
 var field_1 = require("./field");
 var poseidon_1 = require("./poseidon");
 var hash = poseidon_1.poseidon;
 exports.MaxHeight = 16;
-exports.BlockSize = 4;
+exports.BlockShift = 2;
+exports.BlockSize = 1 << exports.BlockShift;
 var MarkleTree = /** @class */ (function () {
     function MarkleTree() {
         this.data = new Map();
@@ -60,7 +61,17 @@ var MarkleTree = /** @class */ (function () {
     MarkleTree.prototype.getNode = function (mtIndex) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
+                if (mtIndex.startsWith("-")) {
+                    throw new Error(mtIndex);
+                }
                 return [2 /*return*/, this.data.get(mtIndex + "I")];
+            });
+        });
+    };
+    MarkleTree.prototype.setNode = function (mtIndex, value) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, this.data.set(mtIndex + "I", value)];
             });
         });
     };
@@ -69,7 +80,7 @@ var MarkleTree = /** @class */ (function () {
             var value;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getNode(mtIndex + "I")];
+                    case 0: return [4 /*yield*/, this.getNode(mtIndex)];
                     case 1:
                         value = _a.sent();
                         if (value === undefined) {
@@ -85,7 +96,7 @@ var MarkleTree = /** @class */ (function () {
             var value;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getNode(mtIndex + "I")];
+                    case 0: return [4 /*yield*/, this.getNode(mtIndex)];
                     case 1:
                         value = _a.sent();
                         if (!(value === undefined)) return [3 /*break*/, 3];
@@ -99,15 +110,13 @@ var MarkleTree = /** @class */ (function () {
             });
         });
     };
-    MarkleTree.prototype.setNode = function (mtIndex, value) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, this.data.set(mtIndex + "I", value)];
-            });
-        });
-    };
     MarkleTree.prototype.convertToMtIndex = function (index) {
-        return index.toString(exports.BlockSize);
+        // toString() may get negative value
+        var ret = "";
+        for (var i = 0; i < exports.MaxHeight; i++) {
+            ret = ((index >> (i * 2)) & 3).toString() + ret;
+        }
+        return ret;
     };
     MarkleTree.prototype.fillPath = function (index) {
         return __awaiter(this, void 0, void 0, function () {
@@ -244,7 +253,14 @@ var MarkleTree = /** @class */ (function () {
             });
         });
     };
-    MarkleTree.prototype.set = function (index, value) {
+    MarkleTree.prototype.getRoot = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, this.getNodeOrDefault("")];
+            });
+        });
+    };
+    MarkleTree.prototype.setLeave = function (index, value) {
         return __awaiter(this, void 0, void 0, function () {
             var mtIndex, path;
             return __generator(this, function (_a) {

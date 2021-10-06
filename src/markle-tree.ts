@@ -73,7 +73,7 @@ export class MarkleTree {
     return path;
   }
 
-  get(index: number) {
+  getLeave(index: number) {
     const path = this._fillPath(index);
     return path[path.length - 1]?.value ?? new Field(0);
   }
@@ -96,7 +96,7 @@ export class MarkleTree {
     }
   }
 
-  set(index: number, value: Field) {
+  setLeave(index: number, value: Field) {
     const path = this._fillPath(index);
     const leaf = path.pop();
 
@@ -120,7 +120,7 @@ export class MarkleTree {
     //console.log('root hash is ' + this.root.value.v.toString(10));
   }
 
-  updateNodeHash(node: Node, level: number) {
-   
+  getRoot() {
+    return this.root.value;
   }
 }
