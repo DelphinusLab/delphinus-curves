@@ -35,17 +35,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MarkleTree = exports.BlockSize = exports.BlockShift = exports.MaxHeight = void 0;
 var field_1 = require("./field");
 var poseidon_1 = require("./poseidon");
+var db_1 = require("./db");
+var bn_js_1 = __importDefault(require("bn.js"));
 var hash = poseidon_1.poseidon;
 exports.MaxHeight = 16;
 exports.BlockShift = 2;
 exports.BlockSize = 1 << exports.BlockShift;
 var MarkleTree = /** @class */ (function () {
     function MarkleTree() {
-        this.data = new Map();
     }
     MarkleTree.emptyNodeHash = function (height) {
         if (this.emptyHashes.length === 0) {
@@ -58,20 +62,88 @@ var MarkleTree = /** @class */ (function () {
         }
         return this.emptyHashes[height];
     };
-    MarkleTree.prototype.getNode = function (mtIndex) {
+    MarkleTree.prototype.getRawNode = function (mtIndex) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 if (mtIndex.startsWith("-")) {
                     throw new Error(mtIndex);
                 }
-                return [2 /*return*/, this.data.get(mtIndex + "I")];
+                return [2 /*return*/, (0, db_1.queryPathOne)(mtIndex + "I")];
+            });
+        });
+    };
+    MarkleTree.prototype.getNode = function (mtIndex) {
+        return __awaiter(this, void 0, void 0, function () {
+            var node;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.getRawNode(mtIndex)];
+                    case 1:
+                        node = _a.sent();
+                        if (node === undefined) {
+                            return [2 /*return*/, node];
+                        }
+                        else {
+                            return [2 /*return*/, (new field_1.Field(new bn_js_1.default(node.field.v.words)))];
+                        }
+                        return [2 /*return*/];
+                }
             });
         });
     };
     MarkleTree.prototype.setNode = function (mtIndex, value) {
+        var _a, _b;
+        return __awaiter(this, void 0, void 0, function () {
+            var oldDoc;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        if (!(MarkleTree.currentSnapshotIdx === undefined)) return [3 /*break*/, 1];
+                        (0, db_1.updatePath)(mtIndex + "I", value);
+                        return [3 /*break*/, 3];
+                    case 1: return [4 /*yield*/, this.getRawNode(mtIndex)];
+                    case 2:
+                        oldDoc = _c.sent();
+                        (0, db_1.updatePathLogging)(mtIndex + "I", (_a = oldDoc === null || oldDoc === void 0 ? void 0 : oldDoc.field) !== null && _a !== void 0 ? _a : MarkleTree.emptyNodeHash(mtIndex.length), value, (_b = oldDoc === null || oldDoc === void 0 ? void 0 : oldDoc.snapshot) !== null && _b !== void 0 ? _b : db_1.default_snapshot_id, MarkleTree.currentSnapshotIdx);
+                        _c.label = 3;
+                    case 3: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    MarkleTree.prototype.startSnapshot = function (id) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/, this.data.set(mtIndex + "I", value)];
+                MarkleTree.currentSnapshotIdx = id;
+                return [2 /*return*/];
+            });
+        });
+    };
+    MarkleTree.prototype.endSnapshot = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                (0, db_1.updateLatestSnapshotId)(MarkleTree.currentSnapshotIdx);
+                MarkleTree.currentSnapshotIdx = undefined;
+                return [2 /*return*/];
+            });
+        });
+    };
+    MarkleTree.prototype.lastestSnapshot = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, (0, db_1.queryLatestSnapshotId)()];
+            });
+        });
+    };
+    MarkleTree.prototype.loadSnapshot = function (latest_snapshot) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, (0, db_1.restoreMerklyTree)(latest_snapshot)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
             });
         });
     };
@@ -310,6 +382,7 @@ var MarkleTree = /** @class */ (function () {
             });
         });
     };
+    MarkleTree.currentSnapshotIdx = undefined;
     MarkleTree.emptyHashes = [];
     return MarkleTree;
 }());

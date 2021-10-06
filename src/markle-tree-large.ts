@@ -1,5 +1,7 @@
 import { Field } from "./field";
 import { poseidon } from "./poseidon";
+import { default_snapshot_id, updatePath, updatePathLogging, updateLatestSnapshotId, queryPathOne, queryLatestSnapshotId, restoreMerklyTree } from "./db";
+import BN from "bn.js";
 
 const hash = poseidon;
 export const MaxHeight = 16;
@@ -13,6 +15,8 @@ export interface PathInfo {
 }
 
 export class MarkleTree {
+  static currentSnapshotIdx: number | undefined = undefined;
+
   static emptyHashes: Field[] = [];
   static emptyNodeHash(height: number) {
     if (this.emptyHashes.length === 0) {
@@ -26,17 +30,50 @@ export class MarkleTree {
     return this.emptyHashes[height];
   }
 
-  data: Map<string, Field> = new Map();
-
-  private async getNode(mtIndex: string) {
+  private async getRawNode(mtIndex: string) {
     if (mtIndex.startsWith("-")) {
       throw new Error(mtIndex);
     }
-    return this.data.get(mtIndex + "I");
+    return queryPathOne(mtIndex + "I")
   }
 
-  private async setNode(mtIndex: string, value: Field) {
-    return this.data.set(mtIndex + "I", value);
+  async getNode(mtIndex: string) {
+    let node = await this.getRawNode(mtIndex);
+    if (node === undefined) {
+      return node;
+    } else {
+      return (new Field(new BN(node.field.v.words)))
+    }
+  }
+
+  async setNode(mtIndex: string, value: Field) {
+    if (MarkleTree.currentSnapshotIdx === undefined) {
+      updatePath(mtIndex + "I", value)
+    } else {
+      let oldDoc = await this.getRawNode(mtIndex);
+      updatePathLogging(mtIndex + "I",
+                        oldDoc?.field ?? MarkleTree.emptyNodeHash(mtIndex.length),
+                        value,
+                        oldDoc?.snapshot ?? default_snapshot_id,
+                        MarkleTree.currentSnapshotIdx!)
+    }
+  }
+
+  async startSnapshot(id: number) {
+    MarkleTree.currentSnapshotIdx = id;
+  }
+
+  async endSnapshot() {
+    updateLatestSnapshotId(MarkleTree.currentSnapshotIdx!);
+    MarkleTree.currentSnapshotIdx = undefined;
+  }
+
+  async lastestSnapshot() {
+    return queryLatestSnapshotId();
+  }
+
+  async loadSnapshot(latest_snapshot: number) {
+    await restoreMerklyTree(latest_snapshot)
   }
 
   private async getNodeOrDefault(mtIndex: string) {
