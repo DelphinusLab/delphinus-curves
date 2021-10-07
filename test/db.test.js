@@ -83,10 +83,7 @@ function main() {
                     return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.loadSnapshot(0)];
                 case 11:
                     _a.sent();
-                    console.log("load snapshot");
                     return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.getNode("0001").then(function (node) {
-                            console.log(node.v);
-                            console.log(markle_tree_large_1.MarkleTree.emptyNodeHash(4).v);
                             assert.ok(node.v.eq(markle_tree_large_1.MarkleTree.emptyNodeHash(4).v));
                         })];
                 case 12:

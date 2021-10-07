@@ -1,6 +1,14 @@
 import { Field } from "./field";
 import { poseidon } from "./poseidon";
-import { default_snapshot_id, updatePath, updatePathLogging, updateLatestSnapshotId, queryPathOne, queryLatestSnapshotId, restoreMerklyTree } from "./db";
+import {
+  default_snapshot_id,
+  updatePath,
+  updatePathLogging,
+  updateLatestSnapshotId,
+  queryPathOne,
+  queryLatestSnapshotId,
+  restoreMerklyTree,
+} from "./db";
 import { Cache } from "./cache";
 import BN from "bn.js";
 
@@ -52,14 +60,18 @@ export class MarkleTree {
 
   async setNode(mtIndex: string, value: Field) {
     if (MarkleTree.currentSnapshotIdx === undefined) {
-      await updatePath(mtIndex + "I", value)
+      await updatePath(mtIndex + "I", value);
     } else {
-      let oldDoc = await this.getRawNode(mtIndex) || undefined;
-      await updatePathLogging(mtIndex + "I",
-                        oldDoc?.field ?? MarkleTree.emptyNodeHash(mtIndex.length),
-                        value,
-                        oldDoc?.snapshot ?? default_snapshot_id,
-                        MarkleTree.currentSnapshotIdx)
+      let oldDoc = (await this.getRawNode(mtIndex)) || undefined;
+      await updatePathLogging(
+        mtIndex + "I",
+        oldDoc?.field !== undefined
+          ? new Field(new BN(oldDoc.field, 16))
+          : MarkleTree.emptyNodeHash(mtIndex.length),
+        value,
+        oldDoc?.snapshot ?? default_snapshot_id,
+        MarkleTree.currentSnapshotIdx
+      );
     }
 
     MarkleTree.cache.add(mtIndex, value);

@@ -28,11 +28,8 @@ async function main() {
     });
 
     await MarkleTree.prototype.loadSnapshot(0);
-    console.log("load snapshot");
 
     await MarkleTree.prototype.getNode("0001").then((node) => {
-        console.log(node!.v);
-        console.log(MarkleTree.emptyNodeHash(4).v);
         assert.ok(node!.v.eq(MarkleTree.emptyNodeHash(4).v));
     });
 
