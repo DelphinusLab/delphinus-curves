@@ -14,45 +14,51 @@ export const default_snapshot_id = -1;
 
 export interface PathDoc {
     path: string;
-    field: Field;
+    field: string;
     snapshot: number;
 }
 
 export interface SnapshotLog {
     path: string,
-    old_field: Field,
-    field: Field,
+    old_field: string,
+    field: string,
     old_snapshot: number,
     snapshot: number
 };
 
-async function findOne(query: any, collection: string): Promise<any | undefined> {
-  let result = undefined;
+let _client: MongoClient;
 
-  const client = new MongoClient(uri);
-  await client.connect();
+async function getMongoClient() {
+  if (!_client) {
+    _client = new MongoClient(uri);
+    await _client.connect();
+  }
+  return _client;
+}
+
+export async function closeMongoClient() {
+  if (_client) {
+    await _client.close();
+  }
+}
+
+async function findOne(query: any, collection: string): Promise<any | undefined> {
+  const client = await getMongoClient();
   const database = client.db(db_name)
   const coll = database.collection(collection);
-  try {
-    result = await coll.findOne(query)
-  } finally {
-    client.close();
-  }
+  const result = await coll.findOne(query);
   return result
 }
 
 async function updateOne(query: any, doc: any, collection: string) {
-  const client = new MongoClient(uri);
-  await client.connect();
+  const client = await getMongoClient();
   const database = client.db(db_name)
   const coll = database.collection(collection);
   await coll.replaceOne(query, doc, { upsert: true });
-  client.close();
 }
 
 async function updateWithLogging(query: any, doc: PathDoc, logging: SnapshotLog) {
-  const client = new MongoClient(uri);
-  await client.connect();
+  const client = await getMongoClient();
   const database = client.db(db_name)
 
   const session = client.startSession();
@@ -64,13 +70,12 @@ async function updateWithLogging(query: any, doc: PathDoc, logging: SnapshotLog)
     const log_collection = database.collection(logging_collection);
     await log_collection.insertOne(logging);
 
-    session.commitTransaction();
+    await session.commitTransaction();
   } catch(error) {
     console.log(error);
-    session.abortTransaction();
+    await session.abortTransaction();
   } finally {
-    session.endSession();
-    client.close();
+    await session.endSession();
   }
 }
 
@@ -81,7 +86,7 @@ export function updatePath(k: string, new_value: Field) {
 
   const doc = {
     path: k,
-    field: new_value,
+    field: new_value.v.toString(16),
     snapshot: default_snapshot_id,
   };
 
@@ -95,14 +100,14 @@ export function updatePathLogging(k: string, old_value: Field, new_value: Field,
 
   const doc = {
     path: k,
-    field: new_value,
+    field: new_value.v.toString(16),
     snapshot: ss
   };
 
   const log = {
     path: k,
-    old_field: old_value,
-    field: new_value,
+    old_field: old_value.v.toString(16),
+    field: new_value.v.toString(16),
     old_snapshot: old_ss,
     snapshot: ss
   };
@@ -137,8 +142,7 @@ export async function queryLatestSnapshotId() {
 }
 
 export async function restoreMerklyTree(snapshot: number) {
-  const client = new MongoClient(uri);
-  await client.connect();
+  const client = await getMongoClient();
   const database = client.db(db_name)
 
   const session = client.startSession();
@@ -168,7 +172,7 @@ export async function restoreMerklyTree(snapshot: number) {
           await live_collection.replaceOne(doc, rollback_doc)
         }
 
-        await log_collection.deleteMany(query);
+        //await log_collection.deleteMany(query);
       }
     };
 
@@ -177,6 +181,5 @@ export async function restoreMerklyTree(snapshot: number) {
     await session.abortTransaction();
   } finally {
     await session.endSession();
-    client.close();
   }
 }

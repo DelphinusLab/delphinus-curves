@@ -17,7 +17,7 @@ export interface PathInfo {
 
 export class MarkleTree {
   static currentSnapshotIdx: number | undefined = undefined;
-  static cache = new Cache(100);
+  static cache = new Cache(10000);
 
   static emptyHashes: Field[] = [];
   static emptyNodeHash(height: number) {
@@ -33,7 +33,8 @@ export class MarkleTree {
   }
 
   private async getRawNode(mtIndex: string) {
-    return queryPathOne(mtIndex + "I");
+    const ret = await queryPathOne(mtIndex + "I");
+    return ret;
   }
 
   async getNode(mtIndex: string) {
@@ -42,28 +43,23 @@ export class MarkleTree {
     }
     let field = MarkleTree.cache.find(mtIndex);
     if (field !== undefined) {
-      console.log("cache hint");
-      return field!;
+      return field;
     } else {
       let node = await this.getRawNode(mtIndex);
-      if (node === undefined) {
-        return node;
-      } else {
-        return (new Field(new BN(node.field.v.words)))
-      }
+      return node === null ? undefined : new Field(new BN(node.field, 16));
     }
   }
 
   async setNode(mtIndex: string, value: Field) {
     if (MarkleTree.currentSnapshotIdx === undefined) {
-      updatePath(mtIndex + "I", value)
+      await updatePath(mtIndex + "I", value)
     } else {
-      let oldDoc = await this.getRawNode(mtIndex);
-      updatePathLogging(mtIndex + "I",
+      let oldDoc = await this.getRawNode(mtIndex) || undefined;
+      await updatePathLogging(mtIndex + "I",
                         oldDoc?.field ?? MarkleTree.emptyNodeHash(mtIndex.length),
                         value,
                         oldDoc?.snapshot ?? default_snapshot_id,
-                        MarkleTree.currentSnapshotIdx!)
+                        MarkleTree.currentSnapshotIdx)
     }
 
     MarkleTree.cache.add(mtIndex, value);
@@ -74,7 +70,7 @@ export class MarkleTree {
   }
 
   async endSnapshot() {
-    updateLatestSnapshotId(MarkleTree.currentSnapshotIdx!);
+    await updateLatestSnapshotId(MarkleTree.currentSnapshotIdx!);
     MarkleTree.currentSnapshotIdx = undefined;
   }
 

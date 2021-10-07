@@ -43,7 +43,7 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.restoreMerklyTree = exports.queryLatestSnapshotId = exports.queryPathOne = exports.updateLatestSnapshotId = exports.updatePathLogging = exports.updatePath = exports.default_snapshot_id = void 0;
+exports.restoreMerklyTree = exports.queryLatestSnapshotId = exports.queryPathOne = exports.updateLatestSnapshotId = exports.updatePathLogging = exports.updatePath = exports.closeMongoClient = exports.default_snapshot_id = void 0;
 var mongodb_1 = require("mongodb");
 var uri = "mongodb://localhost:27017/";
 var db_name = "delphinus";
@@ -55,30 +55,53 @@ var snapshot_id_collection = "merkle_tree_snapshot_id";
 // restore it to initial value.
 exports.default_snapshot_id = -1;
 ;
-function findOne(query, collection) {
+var _client;
+function getMongoClient() {
     return __awaiter(this, void 0, void 0, function () {
-        var result, client, database, coll;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    result = undefined;
-                    client = new mongodb_1.MongoClient(uri);
-                    return [4 /*yield*/, client.connect()];
+                    if (!!_client) return [3 /*break*/, 2];
+                    _client = new mongodb_1.MongoClient(uri);
+                    return [4 /*yield*/, _client.connect()];
                 case 1:
                     _a.sent();
+                    _a.label = 2;
+                case 2: return [2 /*return*/, _client];
+            }
+        });
+    });
+}
+function closeMongoClient() {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (!_client) return [3 /*break*/, 2];
+                    return [4 /*yield*/, _client.close()];
+                case 1:
+                    _a.sent();
+                    _a.label = 2;
+                case 2: return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.closeMongoClient = closeMongoClient;
+function findOne(query, collection) {
+    return __awaiter(this, void 0, void 0, function () {
+        var client, database, coll, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, getMongoClient()];
+                case 1:
+                    client = _a.sent();
                     database = client.db(db_name);
                     coll = database.collection(collection);
-                    _a.label = 2;
-                case 2:
-                    _a.trys.push([2, , 4, 5]);
                     return [4 /*yield*/, coll.findOne(query)];
-                case 3:
+                case 2:
                     result = _a.sent();
-                    return [3 /*break*/, 5];
-                case 4:
-                    client.close();
-                    return [7 /*endfinally*/];
-                case 5: return [2 /*return*/, result];
+                    return [2 /*return*/, result];
             }
         });
     });
@@ -88,17 +111,14 @@ function updateOne(query, doc, collection) {
         var client, database, coll;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0:
-                    client = new mongodb_1.MongoClient(uri);
-                    return [4 /*yield*/, client.connect()];
+                case 0: return [4 /*yield*/, getMongoClient()];
                 case 1:
-                    _a.sent();
+                    client = _a.sent();
                     database = client.db(db_name);
                     coll = database.collection(collection);
                     return [4 /*yield*/, coll.replaceOne(query, doc, { upsert: true })];
                 case 2:
                     _a.sent();
-                    client.close();
                     return [2 /*return*/];
             }
         });
@@ -109,17 +129,15 @@ function updateWithLogging(query, doc, logging) {
         var client, database, session, live_collection, log_collection, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0:
-                    client = new mongodb_1.MongoClient(uri);
-                    return [4 /*yield*/, client.connect()];
+                case 0: return [4 /*yield*/, getMongoClient()];
                 case 1:
-                    _a.sent();
+                    client = _a.sent();
                     database = client.db(db_name);
                     session = client.startSession();
                     session.startTransaction();
                     _a.label = 2;
                 case 2:
-                    _a.trys.push([2, 5, 6, 7]);
+                    _a.trys.push([2, 6, 8, 10]);
                     live_collection = database.collection(merkle_tree_collection);
                     return [4 /*yield*/, live_collection.replaceOne(query, doc, { upsert: true })];
                 case 3:
@@ -128,18 +146,22 @@ function updateWithLogging(query, doc, logging) {
                     return [4 /*yield*/, log_collection.insertOne(logging)];
                 case 4:
                     _a.sent();
-                    session.commitTransaction();
-                    return [3 /*break*/, 7];
+                    return [4 /*yield*/, session.commitTransaction()];
                 case 5:
+                    _a.sent();
+                    return [3 /*break*/, 10];
+                case 6:
                     error_1 = _a.sent();
                     console.log(error_1);
-                    session.abortTransaction();
-                    return [3 /*break*/, 7];
-                case 6:
-                    session.endSession();
-                    client.close();
+                    return [4 /*yield*/, session.abortTransaction()];
+                case 7:
+                    _a.sent();
+                    return [3 /*break*/, 10];
+                case 8: return [4 /*yield*/, session.endSession()];
+                case 9:
+                    _a.sent();
                     return [7 /*endfinally*/];
-                case 7: return [2 /*return*/];
+                case 10: return [2 /*return*/];
             }
         });
     });
@@ -150,7 +172,7 @@ function updatePath(k, new_value) {
     };
     var doc = {
         path: k,
-        field: new_value,
+        field: new_value.v.toString(16),
         snapshot: exports.default_snapshot_id,
     };
     return updateOne(query, doc, merkle_tree_collection);
@@ -162,13 +184,13 @@ function updatePathLogging(k, old_value, new_value, old_ss, ss) {
     };
     var doc = {
         path: k,
-        field: new_value,
+        field: new_value.v.toString(16),
         snapshot: ss
     };
     var log = {
         path: k,
-        old_field: old_value,
-        field: new_value,
+        old_field: old_value.v.toString(16),
+        field: new_value.v.toString(16),
         old_snapshot: old_ss,
         snapshot: ss
     };
@@ -220,29 +242,27 @@ function restoreMerklyTree(snapshot) {
         var client, database, session, live_collection, log_collection, _c, _d, doc, query, _e, _f, log, rollback_doc, e_2_1, e_1_1, error_2;
         return __generator(this, function (_g) {
             switch (_g.label) {
-                case 0:
-                    client = new mongodb_1.MongoClient(uri);
-                    return [4 /*yield*/, client.connect()];
+                case 0: return [4 /*yield*/, getMongoClient()];
                 case 1:
-                    _g.sent();
+                    client = _g.sent();
                     database = client.db(db_name);
                     session = client.startSession();
                     session.startTransaction();
                     _g.label = 2;
                 case 2:
-                    _g.trys.push([2, 30, 32, 34]);
+                    _g.trys.push([2, 28, 30, 32]);
                     live_collection = database.collection(merkle_tree_collection);
                     log_collection = database.collection(logging_collection);
                     _g.label = 3;
                 case 3:
-                    _g.trys.push([3, 22, 23, 28]);
+                    _g.trys.push([3, 20, 21, 26]);
                     _c = __asyncValues(live_collection.find());
                     _g.label = 4;
                 case 4: return [4 /*yield*/, _c.next()];
                 case 5:
-                    if (!(_d = _g.sent(), !_d.done)) return [3 /*break*/, 21];
+                    if (!(_d = _g.sent(), !_d.done)) return [3 /*break*/, 19];
                     doc = _d.value;
-                    if (!(doc.snapshot > snapshot)) return [3 /*break*/, 20];
+                    if (!(doc.snapshot > snapshot)) return [3 /*break*/, 18];
                     query = {
                         path: doc.path,
                         snapshot: { $gt: snapshot },
@@ -286,46 +306,41 @@ function restoreMerklyTree(snapshot) {
                     if (e_2) throw e_2.error;
                     return [7 /*endfinally*/];
                 case 17: return [7 /*endfinally*/];
-                case 18: return [4 /*yield*/, log_collection.deleteMany(query)];
-                case 19:
-                    _g.sent();
-                    _g.label = 20;
-                case 20: return [3 /*break*/, 4];
-                case 21: return [3 /*break*/, 28];
-                case 22:
+                case 18: return [3 /*break*/, 4];
+                case 19: return [3 /*break*/, 26];
+                case 20:
                     e_1_1 = _g.sent();
                     e_1 = { error: e_1_1 };
-                    return [3 /*break*/, 28];
-                case 23:
-                    _g.trys.push([23, , 26, 27]);
-                    if (!(_d && !_d.done && (_a = _c.return))) return [3 /*break*/, 25];
+                    return [3 /*break*/, 26];
+                case 21:
+                    _g.trys.push([21, , 24, 25]);
+                    if (!(_d && !_d.done && (_a = _c.return))) return [3 /*break*/, 23];
                     return [4 /*yield*/, _a.call(_c)];
-                case 24:
+                case 22:
                     _g.sent();
-                    _g.label = 25;
-                case 25: return [3 /*break*/, 27];
-                case 26:
+                    _g.label = 23;
+                case 23: return [3 /*break*/, 25];
+                case 24:
                     if (e_1) throw e_1.error;
                     return [7 /*endfinally*/];
-                case 27: return [7 /*endfinally*/];
-                case 28:
+                case 25: return [7 /*endfinally*/];
+                case 26:
                     ;
                     return [4 /*yield*/, session.commitTransaction()];
-                case 29:
+                case 27:
                     _g.sent();
-                    return [3 /*break*/, 34];
-                case 30:
+                    return [3 /*break*/, 32];
+                case 28:
                     error_2 = _g.sent();
                     return [4 /*yield*/, session.abortTransaction()];
+                case 29:
+                    _g.sent();
+                    return [3 /*break*/, 32];
+                case 30: return [4 /*yield*/, session.endSession()];
                 case 31:
                     _g.sent();
-                    return [3 /*break*/, 34];
-                case 32: return [4 /*yield*/, session.endSession()];
-                case 33:
-                    _g.sent();
-                    client.close();
                     return [7 /*endfinally*/];
-                case 34: return [2 /*return*/];
+                case 32: return [2 /*return*/];
             }
         });
     });

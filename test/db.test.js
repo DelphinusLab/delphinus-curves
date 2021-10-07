@@ -36,6 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var db_1 = require("../src/db");
 var field_1 = require("../src/field");
 var markle_tree_large_1 = require("../src/markle-tree-large");
 var assert = require('assert');
@@ -43,39 +44,56 @@ function main() {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.setNode("0001", new field_1.Field(1))];
+                case 0: return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.loadSnapshot(0)];
                 case 1:
                     _a.sent();
-                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.setNode("0002", new field_1.Field(2))];
+                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.startSnapshot(1)];
                 case 2:
                     _a.sent();
-                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.setNode("0003", new field_1.Field(3))];
+                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.setNode("0002", new field_1.Field(2))];
                 case 3:
                     _a.sent();
-                    markle_tree_large_1.MarkleTree.prototype.getNode("0001").then(function (node) {
-                        assert.ok(node.v.eq(new field_1.Field(1).v));
-                    });
-                    markle_tree_large_1.MarkleTree.prototype.getNode("0002").then(function (node) {
-                        assert.ok(node.v.eq(new field_1.Field(2).v));
-                    });
-                    markle_tree_large_1.MarkleTree.prototype.getNode("0003").then(function (node) {
-                        assert.ok(node.v.eq(new field_1.Field(3).v));
-                    });
-                    markle_tree_large_1.MarkleTree.prototype.startSnapshot(1);
-                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.setNode("0001", new field_1.Field(9))];
+                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.setNode("0003", new field_1.Field(3))];
                 case 4:
                     _a.sent();
-                    markle_tree_large_1.MarkleTree.prototype.endSnapshot();
-                    markle_tree_large_1.MarkleTree.prototype.getNode("0001").then(function (node) {
-                        assert.ok(node.v.eq(new field_1.Field(9).v));
-                    });
-                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.loadSnapshot(0)];
+                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.getNode("0002").then(function (node) {
+                            assert.ok(node.v.eq(new field_1.Field(2).v));
+                        })];
                 case 5:
                     _a.sent();
+                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.getNode("0003").then(function (node) {
+                            assert.ok(node.v.eq(new field_1.Field(3).v));
+                        })];
+                case 6:
+                    _a.sent();
+                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.startSnapshot(2)];
+                case 7:
+                    _a.sent();
+                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.setNode("0001", new field_1.Field(19))];
+                case 8:
+                    _a.sent();
+                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.endSnapshot()];
+                case 9:
+                    _a.sent();
+                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.getNode("0001").then(function (node) {
+                            assert.ok(node.v.eq(new field_1.Field(19).v));
+                        })];
+                case 10:
+                    _a.sent();
+                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.loadSnapshot(0)];
+                case 11:
+                    _a.sent();
                     console.log("load snapshot");
-                    markle_tree_large_1.MarkleTree.prototype.getNode("0001").then(function (node) {
-                        assert.ok(node.v.eq(new field_1.Field(1).v));
-                    });
+                    return [4 /*yield*/, markle_tree_large_1.MarkleTree.prototype.getNode("0001").then(function (node) {
+                            console.log(node.v);
+                            console.log(markle_tree_large_1.MarkleTree.emptyNodeHash(4).v);
+                            assert.ok(node.v.eq(markle_tree_large_1.MarkleTree.emptyNodeHash(4).v));
+                        })];
+                case 12:
+                    _a.sent();
+                    return [4 /*yield*/, (0, db_1.closeMongoClient)()];
+                case 13:
+                    _a.sent();
                     return [2 /*return*/];
             }
         });

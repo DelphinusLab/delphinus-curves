@@ -22,7 +22,6 @@ var Cache = /** @class */ (function () {
         }
     };
     Cache.prototype.add = function (k, v) {
-        console.log(this.data);
         if (!this.data.has(k)) {
             this.count++;
             this.queue.push(k);
