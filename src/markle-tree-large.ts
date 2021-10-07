@@ -1,6 +1,7 @@
 import { Field } from "./field";
 import { poseidon } from "./poseidon";
 import { default_snapshot_id, updatePath, updatePathLogging, updateLatestSnapshotId, queryPathOne, queryLatestSnapshotId, restoreMerklyTree } from "./db";
+import { Cache } from "./cache";
 import BN from "bn.js";
 
 const hash = poseidon;
@@ -16,6 +17,7 @@ export interface PathInfo {
 
 export class MarkleTree {
   static currentSnapshotIdx: number | undefined = undefined;
+  static cache = new Cache(100);
 
   static emptyHashes: Field[] = [];
   static emptyNodeHash(height: number) {
@@ -31,18 +33,24 @@ export class MarkleTree {
   }
 
   private async getRawNode(mtIndex: string) {
-    if (mtIndex.startsWith("-")) {
-      throw new Error(mtIndex);
-    }
-    return queryPathOne(mtIndex + "I")
+    return queryPathOne(mtIndex + "I");
   }
 
   async getNode(mtIndex: string) {
-    let node = await this.getRawNode(mtIndex);
-    if (node === undefined) {
-      return node;
+    if (mtIndex.startsWith("-")) {
+      throw new Error(mtIndex);
+    }
+    let field = MarkleTree.cache.find(mtIndex);
+    if (field !== undefined) {
+      console.log("cache hint");
+      return field!;
     } else {
-      return (new Field(new BN(node.field.v.words)))
+      let node = await this.getRawNode(mtIndex);
+      if (node === undefined) {
+        return node;
+      } else {
+        return (new Field(new BN(node.field.v.words)))
+      }
     }
   }
 
@@ -57,6 +65,8 @@ export class MarkleTree {
                         oldDoc?.snapshot ?? default_snapshot_id,
                         MarkleTree.currentSnapshotIdx!)
     }
+
+    MarkleTree.cache.add(mtIndex, value);
   }
 
   async startSnapshot(id: number) {
@@ -73,7 +83,8 @@ export class MarkleTree {
   }
 
   async loadSnapshot(latest_snapshot: number) {
-    await restoreMerklyTree(latest_snapshot)
+    await restoreMerklyTree(latest_snapshot);
+    MarkleTree.cache.flush();
   }
 
   private async getNodeOrDefault(mtIndex: string) {
