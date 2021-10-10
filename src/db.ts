@@ -1,4 +1,4 @@
-import { Collection, MongoClient, Db } from 'mongodb';
+import { Collection, MongoClient, Db, Long } from 'mongodb';
 import { Field } from "./field";
 import { BN } from 'bn.js';
 
@@ -7,23 +7,51 @@ const merkle_tree_collection = "merkle_tree";
 const logging_collection = "merkle_tree_logging";
 const snapshot_id_collection = "merkle_tree_snapshot_id";
 
+function normalize_to_string(arg: string | Long): string {
+  var ret;
+
+  switch (typeof arg) {
+    case 'string':
+      ret = arg;
+      break;
+    default:
+      ret = arg.toString()
+  }
+
+  return ret;
+}
+
+function normalize_to_long(arg: string | Long): Long {
+  var ret;
+
+  switch (typeof arg) {
+    case 'string':
+      ret = Long.fromString(arg);
+      break;
+    default:
+      ret = arg;
+  }
+
+  return ret;
+}
+
 // Default snapshot_id when MarkleTree.currentSnapshotIdx is undefined.
 // We use -1 so that all valid snapshot id (>= 0) within logging db can
 // restore it to initial value.
-export const default_snapshot_id = -1;
+export const default_snapshot_id = "0";
 
 export interface PathDoc {
   path: string;
   field: string;
-  snapshot: number;
+  snapshot: Long;
 }
 
 export interface SnapshotLog {
   path: string,
   old_field: string,
   field: string,
-  old_snapshot: number,
-  snapshot: number
+  old_snapshot: Long,
+  snapshot: Long
 };
 
 export class MerkleTreeDb {
@@ -98,7 +126,10 @@ export class MerkleTreeDb {
   /*
    * Update merkly tree with logging
    */
-  updatePathLogging(k: string, old_value: Field, new_value: Field, old_ss: number, ss: number) {
+  updatePathLogging(k: string, old_value: Field, new_value: Field, _old_ss: string | Long, _ss: string | Long) {
+    const old_ss = normalize_to_string(_old_ss);
+    const ss = normalize_to_string(_ss);
+
     const query = {
       path: k
     };
@@ -106,15 +137,15 @@ export class MerkleTreeDb {
     const doc: PathDoc = {
       path: k,
       field: new_value.v.toString(16),
-      snapshot: ss
+      snapshot: Long.fromString(ss)
     };
 
     const log: SnapshotLog = {
       path: k,
       old_field: old_value.v.toString(16),
       field: new_value.v.toString(16),
-      old_snapshot: old_ss,
-      snapshot: ss
+      old_snapshot: Long.fromString(old_ss),
+      snapshot: Long.fromString(ss)
     };
 
     return this.updateWithLogging(query, doc, log)
@@ -140,24 +171,30 @@ export class MerkleTreeDb {
   /*
    * Snapshot
    */
-  updateLatestSnapshotId(id: number) {
+  updateLatestSnapshotId(_id: string | Long) {
+    const id = normalize_to_string(_id);
+
     const doc = {
-      snapshot_id: id
+      snapshot_id: Long.fromString(id)
     };
 
     return this.updateOne({}, doc, snapshot_id_collection)
   }
 
-  async queryLatestSnapshotId() {
-    let id = await this.findOne({}, snapshot_id_collection);
-    if (id === undefined) {
+  async queryLatestSnapshotId(): Promise<string> {
+    let node = await this.findOne({}, snapshot_id_collection);
+    let id = node.snapshot_id;
+    if (node === undefined) {
       return default_snapshot_id
     } else {
-      return id.snapshot_id
+      let id: Long = node.snapshot_id;
+      return id.toString()
     }
   }
 
-  async restoreMerkleTree(snapshot: number) {
+  async restoreMerkleTree(_snapshot: string | Long) {
+    const snapshot = normalize_to_long(_snapshot);
+
     await this.cb_on_db_tx(async (database: Db) => {
       const live_collection = database.collection(merkle_tree_collection);
       const log_collection = database.collection(logging_collection);
@@ -178,7 +215,6 @@ export class MerkleTreeDb {
           .sort({ snapshot: 1 })
           .limit(1)
           .toArray();
-        console.log(closest_log[0]);
         let live_node = await live_collection.findOne({ path: path });
         let rollback_doc = {
           path: path,

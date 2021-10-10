@@ -44,10 +44,32 @@ exports.local_uri = "mongodb://localhost:27017/";
 var merkle_tree_collection = "merkle_tree";
 var logging_collection = "merkle_tree_logging";
 var snapshot_id_collection = "merkle_tree_snapshot_id";
+function normalize_to_string(arg) {
+    var ret;
+    switch (typeof arg) {
+        case 'string':
+            ret = arg;
+            break;
+        default:
+            ret = arg.toString();
+    }
+    return ret;
+}
+function normalize_to_long(arg) {
+    var ret;
+    switch (typeof arg) {
+        case 'string':
+            ret = mongodb_1.Long.fromString(arg);
+            break;
+        default:
+            ret = arg;
+    }
+    return ret;
+}
 // Default snapshot_id when MarkleTree.currentSnapshotIdx is undefined.
 // We use -1 so that all valid snapshot id (>= 0) within logging db can
 // restore it to initial value.
-exports.default_snapshot_id = -1;
+exports.default_snapshot_id = "0";
 ;
 var MerkleTreeDb = /** @class */ (function () {
     function MerkleTreeDb(uri, db_name) {
@@ -212,21 +234,23 @@ var MerkleTreeDb = /** @class */ (function () {
     /*
      * Update merkly tree with logging
      */
-    MerkleTreeDb.prototype.updatePathLogging = function (k, old_value, new_value, old_ss, ss) {
+    MerkleTreeDb.prototype.updatePathLogging = function (k, old_value, new_value, _old_ss, _ss) {
+        var old_ss = normalize_to_string(_old_ss);
+        var ss = normalize_to_string(_ss);
         var query = {
             path: k
         };
         var doc = {
             path: k,
             field: new_value.v.toString(16),
-            snapshot: ss
+            snapshot: mongodb_1.Long.fromString(ss)
         };
         var log = {
             path: k,
             old_field: old_value.v.toString(16),
             field: new_value.v.toString(16),
-            old_snapshot: old_ss,
-            snapshot: ss
+            old_snapshot: mongodb_1.Long.fromString(old_ss),
+            snapshot: mongodb_1.Long.fromString(ss)
         };
         return this.updateWithLogging(query, doc, log);
     };
@@ -258,89 +282,93 @@ var MerkleTreeDb = /** @class */ (function () {
     /*
      * Snapshot
      */
-    MerkleTreeDb.prototype.updateLatestSnapshotId = function (id) {
+    MerkleTreeDb.prototype.updateLatestSnapshotId = function (_id) {
+        var id = normalize_to_string(_id);
         var doc = {
-            snapshot_id: id
+            snapshot_id: mongodb_1.Long.fromString(id)
         };
         return this.updateOne({}, doc, snapshot_id_collection);
     };
     MerkleTreeDb.prototype.queryLatestSnapshotId = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var id;
+            var node, id, id_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, this.findOne({}, snapshot_id_collection)];
                     case 1:
-                        id = _a.sent();
-                        if (id === undefined) {
+                        node = _a.sent();
+                        id = node.snapshot_id;
+                        if (node === undefined) {
                             return [2 /*return*/, exports.default_snapshot_id];
                         }
                         else {
-                            return [2 /*return*/, id.snapshot_id];
+                            id_1 = node.snapshot_id;
+                            return [2 /*return*/, id_1.toString()];
                         }
                         return [2 /*return*/];
                 }
             });
         });
     };
-    MerkleTreeDb.prototype.restoreMerkleTree = function (snapshot) {
+    MerkleTreeDb.prototype.restoreMerkleTree = function (_snapshot) {
         return __awaiter(this, void 0, void 0, function () {
+            var snapshot;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.cb_on_db_tx(function (database) { return __awaiter(_this, void 0, void 0, function () {
-                            var live_collection, log_collection, path_should_revert, _i, path_should_revert_1, _path, path, closest_log, live_node, rollback_doc;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        live_collection = database.collection(merkle_tree_collection);
-                                        log_collection = database.collection(logging_collection);
-                                        return [4 /*yield*/, log_collection.aggregate([
-                                                { $match: { snapshot: { $gt: snapshot } } },
-                                                { $group: { _id: "$path" } },
-                                            ]).toArray()];
-                                    case 1:
-                                        path_should_revert = _a.sent();
-                                        console.log(path_should_revert);
-                                        _i = 0, path_should_revert_1 = path_should_revert;
-                                        _a.label = 2;
-                                    case 2:
-                                        if (!(_i < path_should_revert_1.length)) return [3 /*break*/, 7];
-                                        _path = path_should_revert_1[_i];
-                                        path = _path._id;
-                                        return [4 /*yield*/, log_collection
-                                                .find({
-                                                snapshot: { $gt: snapshot },
+                    case 0:
+                        snapshot = normalize_to_long(_snapshot);
+                        return [4 /*yield*/, this.cb_on_db_tx(function (database) { return __awaiter(_this, void 0, void 0, function () {
+                                var live_collection, log_collection, path_should_revert, _i, path_should_revert_1, _path, path, closest_log, live_node, rollback_doc;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            live_collection = database.collection(merkle_tree_collection);
+                                            log_collection = database.collection(logging_collection);
+                                            return [4 /*yield*/, log_collection.aggregate([
+                                                    { $match: { snapshot: { $gt: snapshot } } },
+                                                    { $group: { _id: "$path" } },
+                                                ]).toArray()];
+                                        case 1:
+                                            path_should_revert = _a.sent();
+                                            _i = 0, path_should_revert_1 = path_should_revert;
+                                            _a.label = 2;
+                                        case 2:
+                                            if (!(_i < path_should_revert_1.length)) return [3 /*break*/, 7];
+                                            _path = path_should_revert_1[_i];
+                                            path = _path._id;
+                                            return [4 /*yield*/, log_collection
+                                                    .find({
+                                                    snapshot: { $gt: snapshot },
+                                                    path: path,
+                                                })
+                                                    .sort({ snapshot: 1 })
+                                                    .limit(1)
+                                                    .toArray()];
+                                        case 3:
+                                            closest_log = _a.sent();
+                                            return [4 /*yield*/, live_collection.findOne({ path: path })];
+                                        case 4:
+                                            live_node = _a.sent();
+                                            rollback_doc = {
                                                 path: path,
-                                            })
-                                                .sort({ snapshot: 1 })
-                                                .limit(1)
-                                                .toArray()];
-                                    case 3:
-                                        closest_log = _a.sent();
-                                        console.log(closest_log[0]);
-                                        return [4 /*yield*/, live_collection.findOne({ path: path })];
-                                    case 4:
-                                        live_node = _a.sent();
-                                        rollback_doc = {
-                                            path: path,
-                                            field: closest_log[0].old_field,
-                                            snapshot: closest_log[0].old_snapshot,
-                                        };
-                                        return [4 /*yield*/, live_collection.replaceOne(live_node, rollback_doc)];
-                                    case 5:
-                                        _a.sent();
-                                        _a.label = 6;
-                                    case 6:
-                                        _i++;
-                                        return [3 /*break*/, 2];
-                                    case 7: return [4 /*yield*/, log_collection.deleteMany({ snapshot: { $gt: snapshot } })];
-                                    case 8:
-                                        _a.sent();
-                                        return [2 /*return*/];
-                                }
-                            });
-                        }); })];
+                                                field: closest_log[0].old_field,
+                                                snapshot: closest_log[0].old_snapshot,
+                                            };
+                                            return [4 /*yield*/, live_collection.replaceOne(live_node, rollback_doc)];
+                                        case 5:
+                                            _a.sent();
+                                            _a.label = 6;
+                                        case 6:
+                                            _i++;
+                                            return [3 /*break*/, 2];
+                                        case 7: return [4 /*yield*/, log_collection.deleteMany({ snapshot: { $gt: snapshot } })];
+                                        case 8:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); })];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];

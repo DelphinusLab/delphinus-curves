@@ -20,7 +20,7 @@ export interface PathInfo {
 }
 
 export class MarkleTree {
-  private currentSnapshotIdx: number | undefined = undefined;
+  private currentSnapshotIdx: string | undefined = undefined;
   private cache = new Cache(10000);
   private db_name = "delphinus";
   private db = new MerkleTreeDb(local_uri, this.db_name);
@@ -74,7 +74,7 @@ export class MarkleTree {
     this.cache.add(mtIndex, value);
   }
 
-  async startSnapshot(id: number) {
+  async startSnapshot(id: string) {
     this.currentSnapshotIdx = id;
   }
 
@@ -87,7 +87,7 @@ export class MarkleTree {
     return this.db.queryLatestSnapshotId();
   }
 
-  async loadSnapshot(latest_snapshot: number) {
+  async loadSnapshot(latest_snapshot: string) {
     await this.db.restoreMerkleTree(latest_snapshot);
     this.cache.invalidate();
   }
