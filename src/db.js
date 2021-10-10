@@ -43,10 +43,11 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.restoreMerklyTree = exports.queryLatestSnapshotId = exports.queryPathOne = exports.updateLatestSnapshotId = exports.updatePathLogging = exports.updatePath = exports.closeMongoClient = exports.default_snapshot_id = void 0;
+exports.MerkleTreeDb = exports.default_snapshot_id = exports.local_uri = void 0;
 var mongodb_1 = require("mongodb");
-var uri = "mongodb://localhost:27017/";
-var db_name = "delphinus";
+var field_1 = require("./field");
+var bn_js_1 = require("bn.js");
+exports.local_uri = "mongodb://localhost:27017/";
 var merkle_tree_collection = "merkle_tree";
 var logging_collection = "merkle_tree_logging";
 var snapshot_id_collection = "merkle_tree_snapshot_id";
@@ -55,294 +56,339 @@ var snapshot_id_collection = "merkle_tree_snapshot_id";
 // restore it to initial value.
 exports.default_snapshot_id = -1;
 ;
-var _client;
-function getMongoClient() {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    if (!!_client) return [3 /*break*/, 2];
-                    _client = new mongodb_1.MongoClient(uri);
-                    return [4 /*yield*/, _client.connect()];
-                case 1:
-                    _a.sent();
-                    _a.label = 2;
-                case 2: return [2 /*return*/, _client];
-            }
+var MerkleTreeDb = /** @class */ (function () {
+    function MerkleTreeDb(uri, db_name) {
+        this.client = new mongodb_1.MongoClient(uri);
+        this.db_name = db_name;
+        this.connected = false;
+    }
+    MerkleTreeDb.prototype.getMongoClient = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!!this.connected) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.client.connect()];
+                    case 1:
+                        _a.sent();
+                        this.connected = true;
+                        _a.label = 2;
+                    case 2: return [2 /*return*/, this.client];
+                }
+            });
         });
-    });
-}
-function closeMongoClient() {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    if (!_client) return [3 /*break*/, 2];
-                    return [4 /*yield*/, _client.close()];
-                case 1:
-                    _a.sent();
-                    _a.label = 2;
-                case 2: return [2 /*return*/];
-            }
-        });
-    });
-}
-exports.closeMongoClient = closeMongoClient;
-function findOne(query, collection) {
-    return __awaiter(this, void 0, void 0, function () {
-        var client, database, coll, result;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, getMongoClient()];
-                case 1:
-                    client = _a.sent();
-                    database = client.db(db_name);
-                    coll = database.collection(collection);
-                    return [4 /*yield*/, coll.findOne(query)];
-                case 2:
-                    result = _a.sent();
-                    return [2 /*return*/, result];
-            }
-        });
-    });
-}
-function updateOne(query, doc, collection) {
-    return __awaiter(this, void 0, void 0, function () {
-        var client, database, coll;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, getMongoClient()];
-                case 1:
-                    client = _a.sent();
-                    database = client.db(db_name);
-                    coll = database.collection(collection);
-                    return [4 /*yield*/, coll.replaceOne(query, doc, { upsert: true })];
-                case 2:
-                    _a.sent();
-                    return [2 /*return*/];
-            }
-        });
-    });
-}
-function updateWithLogging(query, doc, logging) {
-    return __awaiter(this, void 0, void 0, function () {
-        var client, database, session, live_collection, log_collection, error_1;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, getMongoClient()];
-                case 1:
-                    client = _a.sent();
-                    database = client.db(db_name);
-                    session = client.startSession();
-                    session.startTransaction();
-                    _a.label = 2;
-                case 2:
-                    _a.trys.push([2, 6, 8, 10]);
-                    live_collection = database.collection(merkle_tree_collection);
-                    return [4 /*yield*/, live_collection.replaceOne(query, doc, { upsert: true })];
-                case 3:
-                    _a.sent();
-                    log_collection = database.collection(logging_collection);
-                    return [4 /*yield*/, log_collection.insertOne(logging)];
-                case 4:
-                    _a.sent();
-                    return [4 /*yield*/, session.commitTransaction()];
-                case 5:
-                    _a.sent();
-                    return [3 /*break*/, 10];
-                case 6:
-                    error_1 = _a.sent();
-                    console.log(error_1);
-                    return [4 /*yield*/, session.abortTransaction()];
-                case 7:
-                    _a.sent();
-                    return [3 /*break*/, 10];
-                case 8: return [4 /*yield*/, session.endSession()];
-                case 9:
-                    _a.sent();
-                    return [7 /*endfinally*/];
-                case 10: return [2 /*return*/];
-            }
-        });
-    });
-}
-function updatePath(k, new_value) {
-    var query = {
-        path: k
     };
-    var doc = {
-        path: k,
-        field: new_value.v.toString(16),
-        snapshot: exports.default_snapshot_id,
-    };
-    return updateOne(query, doc, merkle_tree_collection);
-}
-exports.updatePath = updatePath;
-function updatePathLogging(k, old_value, new_value, old_ss, ss) {
-    var query = {
-        path: k
-    };
-    var doc = {
-        path: k,
-        field: new_value.v.toString(16),
-        snapshot: ss
-    };
-    var log = {
-        path: k,
-        old_field: old_value.v.toString(16),
-        field: new_value.v.toString(16),
-        old_snapshot: old_ss,
-        snapshot: ss
-    };
-    return updateWithLogging(query, doc, log);
-}
-exports.updatePathLogging = updatePathLogging;
-function updateLatestSnapshotId(id) {
-    var doc = {
-        snapshot_id: id
-    };
-    return updateOne({}, doc, snapshot_id_collection);
-}
-exports.updateLatestSnapshotId = updateLatestSnapshotId;
-function queryPathOne(k) {
-    return __awaiter(this, void 0, void 0, function () {
-        var query;
-        return __generator(this, function (_a) {
-            query = {
-                path: k
-            };
-            return [2 /*return*/, findOne(query, merkle_tree_collection)];
+    MerkleTreeDb.prototype.closeMongoClient = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!this.connected) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.client.close()];
+                    case 1:
+                        _a.sent();
+                        this.connected = false;
+                        _a.label = 2;
+                    case 2: return [2 /*return*/];
+                }
+            });
         });
-    });
-}
-exports.queryPathOne = queryPathOne;
-function queryLatestSnapshotId() {
-    return __awaiter(this, void 0, void 0, function () {
-        var id;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, findOne({}, snapshot_id_collection)];
-                case 1:
-                    id = _a.sent();
-                    if (id === undefined) {
-                        return [2 /*return*/, exports.default_snapshot_id];
-                    }
-                    else {
-                        return [2 /*return*/, id.snapshot_id];
-                    }
-                    return [2 /*return*/];
-            }
+    };
+    MerkleTreeDb.prototype.cb_on_db = function (cb) {
+        return __awaiter(this, void 0, void 0, function () {
+            var client, database;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.getMongoClient()];
+                    case 1:
+                        client = _a.sent();
+                        database = client.db(this.db_name);
+                        return [4 /*yield*/, cb(database)];
+                    case 2: return [2 /*return*/, _a.sent()];
+                }
+            });
         });
-    });
-}
-exports.queryLatestSnapshotId = queryLatestSnapshotId;
-function restoreMerklyTree(snapshot) {
-    var e_1, _a, e_2, _b;
-    return __awaiter(this, void 0, void 0, function () {
-        var client, database, session, live_collection, log_collection, _c, _d, doc, query, _e, _f, log, rollback_doc, e_2_1, e_1_1, error_2;
-        return __generator(this, function (_g) {
-            switch (_g.label) {
-                case 0: return [4 /*yield*/, getMongoClient()];
-                case 1:
-                    client = _g.sent();
-                    database = client.db(db_name);
-                    session = client.startSession();
-                    session.startTransaction();
-                    _g.label = 2;
-                case 2:
-                    _g.trys.push([2, 28, 30, 32]);
-                    live_collection = database.collection(merkle_tree_collection);
-                    log_collection = database.collection(logging_collection);
-                    _g.label = 3;
-                case 3:
-                    _g.trys.push([3, 20, 21, 26]);
-                    _c = __asyncValues(live_collection.find());
-                    _g.label = 4;
-                case 4: return [4 /*yield*/, _c.next()];
-                case 5:
-                    if (!(_d = _g.sent(), !_d.done)) return [3 /*break*/, 19];
-                    doc = _d.value;
-                    if (!(doc.snapshot > snapshot)) return [3 /*break*/, 18];
-                    query = {
-                        path: doc.path,
-                        snapshot: { $gt: snapshot },
-                    };
-                    _g.label = 6;
-                case 6:
-                    _g.trys.push([6, 12, 13, 18]);
-                    _e = (e_2 = void 0, __asyncValues(log_collection
-                        .find(query)
-                        .sort({ snapshot: 1 })
-                        .limit(1)));
-                    _g.label = 7;
-                case 7: return [4 /*yield*/, _e.next()];
-                case 8:
-                    if (!(_f = _g.sent(), !_f.done)) return [3 /*break*/, 11];
-                    log = _f.value;
-                    rollback_doc = {
-                        path: doc.path,
-                        field: log.old_field,
-                        snapshot: log.old_snapshot,
-                    };
-                    return [4 /*yield*/, live_collection.replaceOne(doc, rollback_doc)];
-                case 9:
-                    _g.sent();
-                    _g.label = 10;
-                case 10: return [3 /*break*/, 7];
-                case 11: return [3 /*break*/, 18];
-                case 12:
-                    e_2_1 = _g.sent();
-                    e_2 = { error: e_2_1 };
-                    return [3 /*break*/, 18];
-                case 13:
-                    _g.trys.push([13, , 16, 17]);
-                    if (!(_f && !_f.done && (_b = _e.return))) return [3 /*break*/, 15];
-                    return [4 /*yield*/, _b.call(_e)];
-                case 14:
-                    _g.sent();
-                    _g.label = 15;
-                case 15: return [3 /*break*/, 17];
-                case 16:
-                    if (e_2) throw e_2.error;
-                    return [7 /*endfinally*/];
-                case 17: return [7 /*endfinally*/];
-                case 18: return [3 /*break*/, 4];
-                case 19: return [3 /*break*/, 26];
-                case 20:
-                    e_1_1 = _g.sent();
-                    e_1 = { error: e_1_1 };
-                    return [3 /*break*/, 26];
-                case 21:
-                    _g.trys.push([21, , 24, 25]);
-                    if (!(_d && !_d.done && (_a = _c.return))) return [3 /*break*/, 23];
-                    return [4 /*yield*/, _a.call(_c)];
-                case 22:
-                    _g.sent();
-                    _g.label = 23;
-                case 23: return [3 /*break*/, 25];
-                case 24:
-                    if (e_1) throw e_1.error;
-                    return [7 /*endfinally*/];
-                case 25: return [7 /*endfinally*/];
-                case 26:
-                    ;
-                    return [4 /*yield*/, session.commitTransaction()];
-                case 27:
-                    _g.sent();
-                    return [3 /*break*/, 32];
-                case 28:
-                    error_2 = _g.sent();
-                    return [4 /*yield*/, session.abortTransaction()];
-                case 29:
-                    _g.sent();
-                    return [3 /*break*/, 32];
-                case 30: return [4 /*yield*/, session.endSession()];
-                case 31:
-                    _g.sent();
-                    return [7 /*endfinally*/];
-                case 32: return [2 /*return*/];
-            }
+    };
+    MerkleTreeDb.prototype.cb_on_db_tx = function (cb) {
+        return __awaiter(this, void 0, void 0, function () {
+            var client, database, session;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.getMongoClient()];
+                    case 1:
+                        client = _a.sent();
+                        database = client.db(this.db_name);
+                        session = client.startSession();
+                        return [4 /*yield*/, session.withTransaction(function () { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, cb(database)];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); })];
+                    case 2:
+                        _a.sent();
+                        return [4 /*yield*/, session.endSession()];
+                    case 3:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
         });
-    });
-}
-exports.restoreMerklyTree = restoreMerklyTree;
+    };
+    MerkleTreeDb.prototype.cb_on_collection = function (collection, cb) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.cb_on_db(function (database) { return __awaiter(_this, void 0, void 0, function () {
+                            var coll;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        coll = database.collection(collection);
+                                        return [4 /*yield*/, cb(coll)];
+                                    case 1: return [2 /*return*/, _a.sent()];
+                                }
+                            });
+                        }); })];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
+            });
+        });
+    };
+    MerkleTreeDb.prototype.findOne = function (query, collection) {
+        return __awaiter(this, void 0, void 0, function () {
+            var result;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.cb_on_collection(collection, function (coll) { return coll.findOne(query); })];
+                    case 1:
+                        result = _a.sent();
+                        return [2 /*return*/, result === null ? undefined : result];
+                }
+            });
+        });
+    };
+    /* update a doc, if not found then insert one */
+    MerkleTreeDb.prototype.updateOne = function (query, doc, collection) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.cb_on_collection(collection, function (coll) { coll.replaceOne(query, doc, { upsert: true }); })];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    MerkleTreeDb.prototype.updateWithLogging = function (query, doc, logging) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.cb_on_db_tx(function (database) { return __awaiter(_this, void 0, void 0, function () {
+                            var live_collection, log_collection;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        live_collection = database.collection(merkle_tree_collection);
+                                        return [4 /*yield*/, live_collection.replaceOne(query, doc, { upsert: true })];
+                                    case 1:
+                                        _a.sent();
+                                        log_collection = database.collection(logging_collection);
+                                        return [4 /*yield*/, log_collection.insertOne(logging)];
+                                    case 2:
+                                        _a.sent();
+                                        return [2 /*return*/];
+                                }
+                            });
+                        }); })];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    /*
+     * Update merkly tree with logging
+     */
+    MerkleTreeDb.prototype.updatePathLogging = function (k, old_value, new_value, old_ss, ss) {
+        var query = {
+            path: k
+        };
+        var doc = {
+            path: k,
+            field: new_value.v.toString(16),
+            snapshot: ss
+        };
+        var log = {
+            path: k,
+            old_field: old_value.v.toString(16),
+            field: new_value.v.toString(16),
+            old_snapshot: old_ss,
+            snapshot: ss
+        };
+        return this.updateWithLogging(query, doc, log);
+    };
+    /*
+     * query merkle tree node
+     */
+    MerkleTreeDb.prototype.queryMerkleTreeNodeFromPath = function (k) {
+        return __awaiter(this, void 0, void 0, function () {
+            var query, doc;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        query = {
+                            path: k
+                        };
+                        return [4 /*yield*/, this.findOne(query, merkle_tree_collection)];
+                    case 1:
+                        doc = _a.sent();
+                        return [2 /*return*/, doc === undefined ? undefined :
+                                {
+                                    path: k,
+                                    field: new field_1.Field(new bn_js_1.BN(doc.field, 16)),
+                                    snapshot: doc.snapshot
+                                }];
+                }
+            });
+        });
+    };
+    /*
+     * Snapshot
+     */
+    MerkleTreeDb.prototype.updateLatestSnapshotId = function (id) {
+        var doc = {
+            snapshot_id: id
+        };
+        return this.updateOne({}, doc, snapshot_id_collection);
+    };
+    MerkleTreeDb.prototype.queryLatestSnapshotId = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var id;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.findOne({}, snapshot_id_collection)];
+                    case 1:
+                        id = _a.sent();
+                        if (id === undefined) {
+                            return [2 /*return*/, exports.default_snapshot_id];
+                        }
+                        else {
+                            return [2 /*return*/, id.snapshot_id];
+                        }
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    MerkleTreeDb.prototype.restoreMerkleTree = function (snapshot) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.cb_on_db_tx(function (database) { return __awaiter(_this, void 0, void 0, function () {
+                            var live_collection, log_collection, _a, _b, doc, query, _c, _d, log, rollback_doc, e_1_1, e_2_1;
+                            var e_2, _e, e_1, _f;
+                            return __generator(this, function (_g) {
+                                switch (_g.label) {
+                                    case 0:
+                                        live_collection = database.collection(merkle_tree_collection);
+                                        log_collection = database.collection(logging_collection);
+                                        _g.label = 1;
+                                    case 1:
+                                        _g.trys.push([1, 20, 21, 26]);
+                                        _a = __asyncValues(live_collection.find());
+                                        _g.label = 2;
+                                    case 2: return [4 /*yield*/, _a.next()];
+                                    case 3:
+                                        if (!(_b = _g.sent(), !_b.done)) return [3 /*break*/, 19];
+                                        doc = _b.value;
+                                        if (!(doc.snapshot > snapshot)) return [3 /*break*/, 18];
+                                        query = {
+                                            path: doc.path,
+                                            snapshot: { $gt: snapshot },
+                                        };
+                                        _g.label = 4;
+                                    case 4:
+                                        _g.trys.push([4, 10, 11, 16]);
+                                        _c = (e_1 = void 0, __asyncValues(log_collection
+                                            .find(query)
+                                            .sort({ snapshot: 1 })
+                                            .limit(1)));
+                                        _g.label = 5;
+                                    case 5: return [4 /*yield*/, _c.next()];
+                                    case 6:
+                                        if (!(_d = _g.sent(), !_d.done)) return [3 /*break*/, 9];
+                                        log = _d.value;
+                                        rollback_doc = {
+                                            path: doc.path,
+                                            field: log.old_field,
+                                            snapshot: log.old_snapshot,
+                                        };
+                                        return [4 /*yield*/, live_collection.replaceOne(doc, rollback_doc)];
+                                    case 7:
+                                        _g.sent();
+                                        _g.label = 8;
+                                    case 8: return [3 /*break*/, 5];
+                                    case 9: return [3 /*break*/, 16];
+                                    case 10:
+                                        e_1_1 = _g.sent();
+                                        e_1 = { error: e_1_1 };
+                                        return [3 /*break*/, 16];
+                                    case 11:
+                                        _g.trys.push([11, , 14, 15]);
+                                        if (!(_d && !_d.done && (_f = _c.return))) return [3 /*break*/, 13];
+                                        return [4 /*yield*/, _f.call(_c)];
+                                    case 12:
+                                        _g.sent();
+                                        _g.label = 13;
+                                    case 13: return [3 /*break*/, 15];
+                                    case 14:
+                                        if (e_1) throw e_1.error;
+                                        return [7 /*endfinally*/];
+                                    case 15: return [7 /*endfinally*/];
+                                    case 16: return [4 /*yield*/, log_collection.deleteMany(query)];
+                                    case 17:
+                                        _g.sent();
+                                        _g.label = 18;
+                                    case 18: return [3 /*break*/, 2];
+                                    case 19: return [3 /*break*/, 26];
+                                    case 20:
+                                        e_2_1 = _g.sent();
+                                        e_2 = { error: e_2_1 };
+                                        return [3 /*break*/, 26];
+                                    case 21:
+                                        _g.trys.push([21, , 24, 25]);
+                                        if (!(_b && !_b.done && (_e = _a.return))) return [3 /*break*/, 23];
+                                        return [4 /*yield*/, _e.call(_a)];
+                                    case 22:
+                                        _g.sent();
+                                        _g.label = 23;
+                                    case 23: return [3 /*break*/, 25];
+                                    case 24:
+                                        if (e_2) throw e_2.error;
+                                        return [7 /*endfinally*/];
+                                    case 25: return [7 /*endfinally*/];
+                                    case 26: return [2 /*return*/];
+                                }
+                            });
+                        }); })];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    return MerkleTreeDb;
+}());
+exports.MerkleTreeDb = MerkleTreeDb;

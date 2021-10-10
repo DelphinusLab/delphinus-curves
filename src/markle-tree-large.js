@@ -35,22 +35,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MarkleTree = exports.BlockSize = exports.BlockShift = exports.MaxHeight = void 0;
 var field_1 = require("./field");
 var poseidon_1 = require("./poseidon");
 var db_1 = require("./db");
 var cache_1 = require("./cache");
-var bn_js_1 = __importDefault(require("bn.js"));
 var hash = poseidon_1.poseidon;
 exports.MaxHeight = 16;
 exports.BlockShift = 2;
 exports.BlockSize = 1 << exports.BlockShift;
 var MarkleTree = /** @class */ (function () {
     function MarkleTree() {
+        this.currentSnapshotIdx = undefined;
+        this.db_name = "delphinus";
+        this.db = new db_1.MerkleTreeDb(db_1.local_uri, this.db_name);
     }
     MarkleTree.emptyNodeHash = function (height) {
         if (this.emptyHashes.length === 0) {
@@ -65,13 +64,10 @@ var MarkleTree = /** @class */ (function () {
     };
     MarkleTree.prototype.getRawNode = function (mtIndex) {
         return __awaiter(this, void 0, void 0, function () {
-            var ret;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, (0, db_1.queryPathOne)(mtIndex + "I")];
-                    case 1:
-                        ret = _a.sent();
-                        return [2 /*return*/, ret];
+                    case 0: return [4 /*yield*/, this.db.queryMerkleTreeNodeFromPath(mtIndex + "I")];
+                    case 1: return [2 /*return*/, _a.sent()];
                 }
             });
         });
@@ -91,7 +87,7 @@ var MarkleTree = /** @class */ (function () {
                     case 1: return [4 /*yield*/, this.getRawNode(mtIndex)];
                     case 2:
                         node = _a.sent();
-                        return [2 /*return*/, node === null ? undefined : new field_1.Field(new bn_js_1.default(node.field, 16))];
+                        return [2 /*return*/, node === undefined ? undefined : node.field];
                 }
             });
         });
@@ -103,21 +99,18 @@ var MarkleTree = /** @class */ (function () {
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        if (!(MarkleTree.currentSnapshotIdx === undefined)) return [3 /*break*/, 2];
-                        return [4 /*yield*/, (0, db_1.updatePath)(mtIndex + "I", value)];
-                    case 1:
-                        _b.sent();
-                        return [3 /*break*/, 5];
-                    case 2: return [4 /*yield*/, this.getRawNode(mtIndex)];
-                    case 3:
+                        if (!(this.currentSnapshotIdx === undefined)) return [3 /*break*/, 1];
+                        throw new Error("snapshot not set");
+                    case 1: return [4 /*yield*/, this.getRawNode(mtIndex)];
+                    case 2:
                         oldDoc = (_b.sent()) || undefined;
-                        return [4 /*yield*/, (0, db_1.updatePathLogging)(mtIndex + "I", (oldDoc === null || oldDoc === void 0 ? void 0 : oldDoc.field) !== undefined
-                                ? new field_1.Field(new bn_js_1.default(oldDoc.field, 16))
-                                : MarkleTree.emptyNodeHash(mtIndex.length), value, (_a = oldDoc === null || oldDoc === void 0 ? void 0 : oldDoc.snapshot) !== null && _a !== void 0 ? _a : db_1.default_snapshot_id, MarkleTree.currentSnapshotIdx)];
-                    case 4:
+                        return [4 /*yield*/, this.db.updatePathLogging(mtIndex + "I", (oldDoc === null || oldDoc === void 0 ? void 0 : oldDoc.field) !== undefined
+                                ? oldDoc.field
+                                : MarkleTree.emptyNodeHash(mtIndex.length), value, (_a = oldDoc === null || oldDoc === void 0 ? void 0 : oldDoc.snapshot) !== null && _a !== void 0 ? _a : db_1.default_snapshot_id, this.currentSnapshotIdx)];
+                    case 3:
                         _b.sent();
-                        _b.label = 5;
-                    case 5:
+                        _b.label = 4;
+                    case 4:
                         MarkleTree.cache.add(mtIndex, value);
                         return [2 /*return*/];
                 }
@@ -127,7 +120,7 @@ var MarkleTree = /** @class */ (function () {
     MarkleTree.prototype.startSnapshot = function (id) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                MarkleTree.currentSnapshotIdx = id;
+                this.currentSnapshotIdx = id;
                 return [2 /*return*/];
             });
         });
@@ -135,20 +128,16 @@ var MarkleTree = /** @class */ (function () {
     MarkleTree.prototype.endSnapshot = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, (0, db_1.updateLatestSnapshotId)(MarkleTree.currentSnapshotIdx)];
-                    case 1:
-                        _a.sent();
-                        MarkleTree.currentSnapshotIdx = undefined;
-                        return [2 /*return*/];
-                }
+                this.db.updateLatestSnapshotId(this.currentSnapshotIdx);
+                this.currentSnapshotIdx = undefined;
+                return [2 /*return*/];
             });
         });
     };
     MarkleTree.prototype.lastestSnapshot = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/, (0, db_1.queryLatestSnapshotId)()];
+                return [2 /*return*/, this.db.queryLatestSnapshotId()];
             });
         });
     };
@@ -156,10 +145,22 @@ var MarkleTree = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, (0, db_1.restoreMerklyTree)(latest_snapshot)];
+                    case 0: return [4 /*yield*/, this.db.restoreMerkleTree(latest_snapshot)];
                     case 1:
                         _a.sent();
                         MarkleTree.cache.flush();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    MarkleTree.prototype.closeDb = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.db.closeMongoClient()];
+                    case 1:
+                        _a.sent();
                         return [2 /*return*/];
                 }
             });
@@ -400,7 +401,6 @@ var MarkleTree = /** @class */ (function () {
             });
         });
     };
-    MarkleTree.currentSnapshotIdx = undefined;
     MarkleTree.cache = new cache_1.Cache(10000);
     MarkleTree.emptyHashes = [];
     return MarkleTree;

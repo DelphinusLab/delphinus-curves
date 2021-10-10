@@ -2,12 +2,8 @@ import { Field } from "./field";
 import { poseidon } from "./poseidon";
 import {
   default_snapshot_id,
-  updatePath,
-  updatePathLogging,
-  updateLatestSnapshotId,
-  queryPathOne,
-  queryLatestSnapshotId,
-  restoreMerklyTree,
+  local_uri,
+  MerkleTreeDb
 } from "./db";
 import { Cache } from "./cache";
 import BN from "bn.js";
@@ -24,8 +20,10 @@ export interface PathInfo {
 }
 
 export class MarkleTree {
-  static currentSnapshotIdx: number | undefined = undefined;
+  private currentSnapshotIdx: number | undefined = undefined;
   static cache = new Cache(10000);
+  private db_name = "delphinus";
+  private db = new MerkleTreeDb(local_uri, this.db_name);
 
   static emptyHashes: Field[] = [];
   static emptyNodeHash(height: number) {
@@ -41,8 +39,7 @@ export class MarkleTree {
   }
 
   private async getRawNode(mtIndex: string) {
-    const ret = await queryPathOne(mtIndex + "I");
-    return ret;
+    return await this.db.queryMerkleTreeNodeFromPath(mtIndex + "I");
   }
 
   async getNode(mtIndex: string) {
@@ -54,23 +51,23 @@ export class MarkleTree {
       return field;
     } else {
       let node = await this.getRawNode(mtIndex);
-      return node === null ? undefined : new Field(new BN(node.field, 16));
+      return node === undefined ? undefined : node.field;
     }
   }
 
   async setNode(mtIndex: string, value: Field) {
-    if (MarkleTree.currentSnapshotIdx === undefined) {
-      await updatePath(mtIndex + "I", value);
+    if (this.currentSnapshotIdx === undefined) {
+      throw new Error("snapshot not set");
     } else {
       let oldDoc = (await this.getRawNode(mtIndex)) || undefined;
-      await updatePathLogging(
+      await this.db.updatePathLogging(
         mtIndex + "I",
         oldDoc?.field !== undefined
-          ? new Field(new BN(oldDoc.field, 16))
+          ? oldDoc.field
           : MarkleTree.emptyNodeHash(mtIndex.length),
         value,
         oldDoc?.snapshot ?? default_snapshot_id,
-        MarkleTree.currentSnapshotIdx
+        this.currentSnapshotIdx
       );
     }
 
@@ -78,21 +75,25 @@ export class MarkleTree {
   }
 
   async startSnapshot(id: number) {
-    MarkleTree.currentSnapshotIdx = id;
+    this.currentSnapshotIdx = id;
   }
 
   async endSnapshot() {
-    await updateLatestSnapshotId(MarkleTree.currentSnapshotIdx!);
-    MarkleTree.currentSnapshotIdx = undefined;
+    this.db.updateLatestSnapshotId(this.currentSnapshotIdx!);
+    this.currentSnapshotIdx = undefined;
   }
 
   async lastestSnapshot() {
-    return queryLatestSnapshotId();
+    return this.db.queryLatestSnapshotId();
   }
 
   async loadSnapshot(latest_snapshot: number) {
-    await restoreMerklyTree(latest_snapshot);
+    await this.db.restoreMerkleTree(latest_snapshot);
     MarkleTree.cache.flush();
+  }
+
+  async closeDb() {
+    await this.db.closeMongoClient();
   }
 
   private async getNodeOrDefault(mtIndex: string) {
