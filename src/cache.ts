@@ -14,7 +14,7 @@ export class Cache {
     this.queue = [];
   }
 
-  flush() {
+  invalidate() {
     this.data.clear();
     this.count == 0;
     this.queue = [];

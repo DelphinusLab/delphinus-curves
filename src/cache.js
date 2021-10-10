@@ -9,7 +9,7 @@ var Cache = /** @class */ (function () {
         this.queue = [];
     }
     ;
-    Cache.prototype.flush = function () {
+    Cache.prototype.invalidate = function () {
         this.data.clear();
         this.count == 0;
         this.queue = [];

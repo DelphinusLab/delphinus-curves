@@ -48,6 +48,7 @@ exports.BlockSize = 1 << exports.BlockShift;
 var MarkleTree = /** @class */ (function () {
     function MarkleTree() {
         this.currentSnapshotIdx = undefined;
+        this.cache = new cache_1.Cache(10000);
         this.db_name = "delphinus";
         this.db = new db_1.MerkleTreeDb(db_1.local_uri, this.db_name);
     }
@@ -81,7 +82,7 @@ var MarkleTree = /** @class */ (function () {
                         if (mtIndex.startsWith("-")) {
                             throw new Error(mtIndex);
                         }
-                        field = MarkleTree.cache.find(mtIndex);
+                        field = this.cache.find(mtIndex);
                         if (!(field !== undefined)) return [3 /*break*/, 1];
                         return [2 /*return*/, field];
                     case 1: return [4 /*yield*/, this.getRawNode(mtIndex)];
@@ -111,7 +112,7 @@ var MarkleTree = /** @class */ (function () {
                         _b.sent();
                         _b.label = 4;
                     case 4:
-                        MarkleTree.cache.add(mtIndex, value);
+                        this.cache.add(mtIndex, value);
                         return [2 /*return*/];
                 }
             });
@@ -148,7 +149,7 @@ var MarkleTree = /** @class */ (function () {
                     case 0: return [4 /*yield*/, this.db.restoreMerkleTree(latest_snapshot)];
                     case 1:
                         _a.sent();
-                        MarkleTree.cache.flush();
+                        this.cache.invalidate();
                         return [2 /*return*/];
                 }
             });
@@ -401,7 +402,6 @@ var MarkleTree = /** @class */ (function () {
             });
         });
     };
-    MarkleTree.cache = new cache_1.Cache(10000);
     MarkleTree.emptyHashes = [];
     return MarkleTree;
 }());
