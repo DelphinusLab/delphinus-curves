@@ -52,19 +52,17 @@ function main() {
                     return [4 /*yield*/, merkle_tree.startSnapshot(1)];
                 case 2:
                     _a.sent();
-                    return [4 /*yield*/, merkle_tree.setNode("0002", new field_1.Field(2))];
+                    return [4 /*yield*/, merkle_tree.setNode("0001", new field_1.Field(1))];
                 case 3:
                     _a.sent();
-                    return [4 /*yield*/, merkle_tree.setNode("0003", new field_1.Field(3))];
+                    return [4 /*yield*/, merkle_tree.setNode("0002", new field_1.Field(2))];
                 case 4:
                     _a.sent();
-                    return [4 /*yield*/, merkle_tree.getNode("0002").then(function (node) {
-                            assert.ok(node.v.eq(new field_1.Field(2).v));
-                        })];
+                    return [4 /*yield*/, merkle_tree.setNode("0003", new field_1.Field(3))];
                 case 5:
                     _a.sent();
-                    return [4 /*yield*/, merkle_tree.getNode("0003").then(function (node) {
-                            assert.ok(node.v.eq(new field_1.Field(3).v));
+                    return [4 /*yield*/, merkle_tree.getNode("0001").then(function (node) {
+                            assert.ok(node.v.eq(new field_1.Field(1).v));
                         })];
                 case 6:
                     _a.sent();
@@ -82,10 +80,23 @@ function main() {
                         })];
                 case 10:
                     _a.sent();
+                    /*
+                        await merkle_tree.loadSnapshot(1);
+                        await merkle_tree.getNode("0001").then((node) => {
+                            assert.ok(node!.v.eq(new Field(1).v))
+                        });
+                        */
                     return [4 /*yield*/, merkle_tree.loadSnapshot(0)];
                 case 11:
+                    /*
+                        await merkle_tree.loadSnapshot(1);
+                        await merkle_tree.getNode("0001").then((node) => {
+                            assert.ok(node!.v.eq(new Field(1).v))
+                        });
+                        */
                     _a.sent();
                     return [4 /*yield*/, merkle_tree.getNode("0001").then(function (node) {
+                            console.log(node);
                             assert.ok(node.v.eq(markle_tree_large_1.MarkleTree.emptyNodeHash(4).v));
                         })];
                 case 12:

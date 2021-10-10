@@ -35,13 +35,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MerkleTreeDb = exports.default_snapshot_id = exports.local_uri = void 0;
 var mongodb_1 = require("mongodb");
@@ -296,89 +289,55 @@ var MerkleTreeDb = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, this.cb_on_db_tx(function (database) { return __awaiter(_this, void 0, void 0, function () {
-                            var live_collection, log_collection, _a, _b, doc, query, _c, _d, log, rollback_doc, e_1_1, e_2_1;
-                            var e_2, _e, e_1, _f;
-                            return __generator(this, function (_g) {
-                                switch (_g.label) {
+                            var live_collection, log_collection, path_should_revert, _i, path_should_revert_1, _path, path, closest_log, live_node, rollback_doc;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
                                     case 0:
                                         live_collection = database.collection(merkle_tree_collection);
                                         log_collection = database.collection(logging_collection);
-                                        _g.label = 1;
+                                        return [4 /*yield*/, log_collection.aggregate([
+                                                { $match: { snapshot: { $gt: snapshot } } },
+                                                { $group: { _id: "$path" } },
+                                            ]).toArray()];
                                     case 1:
-                                        _g.trys.push([1, 20, 21, 26]);
-                                        _a = __asyncValues(live_collection.find());
-                                        _g.label = 2;
-                                    case 2: return [4 /*yield*/, _a.next()];
+                                        path_should_revert = _a.sent();
+                                        console.log(path_should_revert);
+                                        _i = 0, path_should_revert_1 = path_should_revert;
+                                        _a.label = 2;
+                                    case 2:
+                                        if (!(_i < path_should_revert_1.length)) return [3 /*break*/, 7];
+                                        _path = path_should_revert_1[_i];
+                                        path = _path._id;
+                                        return [4 /*yield*/, log_collection
+                                                .find({
+                                                snapshot: { $gt: snapshot },
+                                                path: path,
+                                            })
+                                                .sort({ snapshot: 1 })
+                                                .limit(1)
+                                                .toArray()];
                                     case 3:
-                                        if (!(_b = _g.sent(), !_b.done)) return [3 /*break*/, 19];
-                                        doc = _b.value;
-                                        if (!(doc.snapshot > snapshot)) return [3 /*break*/, 18];
-                                        query = {
-                                            path: doc.path,
-                                            snapshot: { $gt: snapshot },
-                                        };
-                                        _g.label = 4;
+                                        closest_log = _a.sent();
+                                        console.log(closest_log[0]);
+                                        return [4 /*yield*/, live_collection.findOne({ path: path })];
                                     case 4:
-                                        _g.trys.push([4, 10, 11, 16]);
-                                        _c = (e_1 = void 0, __asyncValues(log_collection
-                                            .find(query)
-                                            .sort({ snapshot: 1 })
-                                            .limit(1)));
-                                        _g.label = 5;
-                                    case 5: return [4 /*yield*/, _c.next()];
-                                    case 6:
-                                        if (!(_d = _g.sent(), !_d.done)) return [3 /*break*/, 9];
-                                        log = _d.value;
+                                        live_node = _a.sent();
                                         rollback_doc = {
-                                            path: doc.path,
-                                            field: log.old_field,
-                                            snapshot: log.old_snapshot,
+                                            path: path,
+                                            field: closest_log[0].old_field,
+                                            snapshot: closest_log[0].old_snapshot,
                                         };
-                                        return [4 /*yield*/, live_collection.replaceOne(doc, rollback_doc)];
-                                    case 7:
-                                        _g.sent();
-                                        _g.label = 8;
-                                    case 8: return [3 /*break*/, 5];
-                                    case 9: return [3 /*break*/, 16];
-                                    case 10:
-                                        e_1_1 = _g.sent();
-                                        e_1 = { error: e_1_1 };
-                                        return [3 /*break*/, 16];
-                                    case 11:
-                                        _g.trys.push([11, , 14, 15]);
-                                        if (!(_d && !_d.done && (_f = _c.return))) return [3 /*break*/, 13];
-                                        return [4 /*yield*/, _f.call(_c)];
-                                    case 12:
-                                        _g.sent();
-                                        _g.label = 13;
-                                    case 13: return [3 /*break*/, 15];
-                                    case 14:
-                                        if (e_1) throw e_1.error;
-                                        return [7 /*endfinally*/];
-                                    case 15: return [7 /*endfinally*/];
-                                    case 16: return [4 /*yield*/, log_collection.deleteMany(query)];
-                                    case 17:
-                                        _g.sent();
-                                        _g.label = 18;
-                                    case 18: return [3 /*break*/, 2];
-                                    case 19: return [3 /*break*/, 26];
-                                    case 20:
-                                        e_2_1 = _g.sent();
-                                        e_2 = { error: e_2_1 };
-                                        return [3 /*break*/, 26];
-                                    case 21:
-                                        _g.trys.push([21, , 24, 25]);
-                                        if (!(_b && !_b.done && (_e = _a.return))) return [3 /*break*/, 23];
-                                        return [4 /*yield*/, _e.call(_a)];
-                                    case 22:
-                                        _g.sent();
-                                        _g.label = 23;
-                                    case 23: return [3 /*break*/, 25];
-                                    case 24:
-                                        if (e_2) throw e_2.error;
-                                        return [7 /*endfinally*/];
-                                    case 25: return [7 /*endfinally*/];
-                                    case 26: return [2 /*return*/];
+                                        return [4 /*yield*/, live_collection.replaceOne(live_node, rollback_doc)];
+                                    case 5:
+                                        _a.sent();
+                                        _a.label = 6;
+                                    case 6:
+                                        _i++;
+                                        return [3 /*break*/, 2];
+                                    case 7: return [4 /*yield*/, log_collection.deleteMany({ snapshot: { $gt: snapshot } })];
+                                    case 8:
+                                        _a.sent();
+                                        return [2 /*return*/];
                                 }
                             });
                         }); })];
