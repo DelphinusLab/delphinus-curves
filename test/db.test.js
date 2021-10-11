@@ -101,8 +101,31 @@ function main() {
                         })];
                 case 15:
                     _a.sent();
-                    return [4 /*yield*/, merkle_tree.closeDb()];
+                    return [4 /*yield*/, merkle_tree.startSnapshot("1")];
                 case 16:
+                    _a.sent();
+                    return [4 /*yield*/, merkle_tree.setNode("0001", new field_1.Field(1))];
+                case 17:
+                    _a.sent();
+                    return [4 /*yield*/, merkle_tree.setNode("0001", new field_1.Field(2))];
+                case 18:
+                    _a.sent();
+                    return [4 /*yield*/, merkle_tree.setNode("0001", new field_1.Field(3))];
+                case 19:
+                    _a.sent();
+                    return [4 /*yield*/, merkle_tree.endSnapshot()];
+                case 20:
+                    _a.sent();
+                    return [4 /*yield*/, merkle_tree.loadSnapshot("0")];
+                case 21:
+                    _a.sent();
+                    return [4 /*yield*/, merkle_tree.getNode("0001").then(function (node) {
+                            assert.ok(node.v.eq(markle_tree_large_1.MarkleTree.emptyNodeHash(4).v));
+                        })];
+                case 22:
+                    _a.sent();
+                    return [4 /*yield*/, merkle_tree.closeDb()];
+                case 23:
                     _a.sent();
                     return [2 /*return*/];
             }

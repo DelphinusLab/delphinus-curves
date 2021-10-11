@@ -119,7 +119,19 @@ export class MerkleTreeDb {
       const live_collection = database.collection(merkle_tree_collection);
       await live_collection.replaceOne(query, doc, { upsert: true });
       const log_collection = database.collection(logging_collection);
-      await log_collection.insertOne(logging);
+
+      let query_old_log = {
+        path: doc.path,
+        snapshot: logging.snapshot
+      };
+      let old_logging = await log_collection.findOne(query_old_log);
+      if (old_logging === null) {
+        await log_collection.insertOne(logging);
+      } else {
+        logging.old_field = old_logging.old_field;
+        logging.old_snapshot = old_logging.old_snapshot;
+        await log_collection.replaceOne(old_logging, logging);
+      }
     });
   }
 

@@ -208,7 +208,7 @@ var MerkleTreeDb = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, this.cb_on_db_tx(function (database) { return __awaiter(_this, void 0, void 0, function () {
-                            var live_collection, log_collection;
+                            var live_collection, log_collection, query_old_log, old_logging;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
@@ -217,10 +217,26 @@ var MerkleTreeDb = /** @class */ (function () {
                                     case 1:
                                         _a.sent();
                                         log_collection = database.collection(logging_collection);
-                                        return [4 /*yield*/, log_collection.insertOne(logging)];
+                                        query_old_log = {
+                                            path: doc.path,
+                                            snapshot: logging.snapshot
+                                        };
+                                        return [4 /*yield*/, log_collection.findOne(query_old_log)];
                                     case 2:
+                                        old_logging = _a.sent();
+                                        if (!(old_logging === null)) return [3 /*break*/, 4];
+                                        return [4 /*yield*/, log_collection.insertOne(logging)];
+                                    case 3:
                                         _a.sent();
-                                        return [2 /*return*/];
+                                        return [3 /*break*/, 6];
+                                    case 4:
+                                        logging.old_field = old_logging.old_field;
+                                        logging.old_snapshot = old_logging.old_snapshot;
+                                        return [4 /*yield*/, log_collection.replaceOne(old_logging, logging)];
+                                    case 5:
+                                        _a.sent();
+                                        _a.label = 6;
+                                    case 6: return [2 /*return*/];
                                 }
                             });
                         }); })];
