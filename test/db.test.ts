@@ -44,6 +44,9 @@ async function main() {
     await merkle_tree.setNode("0001", new Field(2));
     await merkle_tree.setNode("0001", new Field(3));
     await merkle_tree.endSnapshot();
+    await merkle_tree.startSnapshot("2");
+    await merkle_tree.setNode("0001", new Field(4));
+    await merkle_tree.endSnapshot();
     await merkle_tree.loadSnapshot("0");
     await merkle_tree.getNode("0001").then((node) => {
         assert.ok(node!.v.eq(MarkleTree.emptyNodeHash(4).v));
