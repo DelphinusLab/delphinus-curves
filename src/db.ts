@@ -16,7 +16,7 @@ function normalize_to_long(arg: string | Long): Long {
 }
 
 // Default snapshot_id when MarkleTree.currentSnapshotIdx is undefined.
-// We use -1 so that all valid snapshot id (>= 0) within logging db can
+// We use 0 so that all valid snapshot id (>= 0) within logging db can
 // restore it to initial value.
 export const default_snapshot_id = "0";
 
