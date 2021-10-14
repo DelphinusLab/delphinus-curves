@@ -1,6 +1,5 @@
-import { BN } from "bn.js";
-import { Field } from "../src/field";
-import { MarkleTree } from "../src/markle-tree-large";
+import { Field } from "../field";
+import { MarkleTree } from "../markle-tree-large";
 
 var assert = require('assert');
 

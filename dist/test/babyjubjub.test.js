@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var bn_js_1 = require("bn.js");
 var sha256_1 = __importDefault(require("sha256"));
-var babyjubjub_1 = require("../src/babyjubjub");
+var babyjubjub_1 = require("../babyjubjub");
 var prik = babyjubjub_1.PrivateKey.random();
 console.log(prik.key.v.toString("hex"));
 var pubk = prik.publicKey;
