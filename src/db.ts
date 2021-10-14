@@ -207,28 +207,23 @@ export class MerkleTreeDb {
     await this.cb_on_db_tx(async (database: Db) => {
       const live_collection = database.collection(merkle_tree_collection);
       const log_collection = database.collection(logging_collection);
+
       const path_should_revert = await log_collection
         .aggregate([
           { $match: { snapshot: { $gt: snapshot } } },
-          { $group: { _id: "$path" } },
+          { $sort: { snapshot: 1 } },
+          { $group: { _id: "$path", firstLog: { $first: "$$ROOT" } } },
         ])
         .toArray();
 
-      for (const _path of path_should_revert) {
-        const path = _path._id;
-        let closest_log = await log_collection
-          .find({
-            snapshot: { $gt: snapshot },
-            path: path,
-          })
-          .sort({ snapshot: 1 })
-          .limit(1)
-          .toArray();
-        let live_node = await live_collection.findOne({ path: path });
+      for (const path of path_should_revert) {
+        const log = path.firstLog;
+        let live_node = await live_collection.findOne({ path: log.path });
+
         let rollback_doc = {
-          path: path,
-          field: closest_log[0].old_field,
-          snapshot: closest_log[0].old_snapshot,
+          path: log.path,
+          field: log.old_field,
+          snapshot: log.old_snapshot,
         };
 
         await live_collection.replaceOne(live_node!, rollback_doc);
