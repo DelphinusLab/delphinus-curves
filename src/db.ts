@@ -1,6 +1,6 @@
-import { Collection, MongoClient, Db, Long } from 'mongodb';
+import { Collection, Document, MongoClient, Db, Long, Filter } from "mongodb";
 import { Field } from "./field";
-import { BN } from 'bn.js';
+import { BN } from "bn.js";
 
 export const local_uri = "mongodb://localhost:27017/";
 const merkle_tree_collection = "merkle_tree";
@@ -8,31 +8,11 @@ const logging_collection = "merkle_tree_logging";
 const snapshot_id_collection = "merkle_tree_snapshot_id";
 
 function normalize_to_string(arg: string | Long): string {
-  var ret;
-
-  switch (typeof arg) {
-    case 'string':
-      ret = arg;
-      break;
-    default:
-      ret = arg.toString()
-  }
-
-  return ret;
+  return arg.toString();
 }
 
 function normalize_to_long(arg: string | Long): Long {
-  var ret;
-
-  switch (typeof arg) {
-    case 'string':
-      ret = Long.fromString(arg);
-      break;
-    default:
-      ret = arg;
-  }
-
-  return ret;
+  return typeof arg === "string" ? Long.fromString(arg) : arg;
 }
 
 // Default snapshot_id when MarkleTree.currentSnapshotIdx is undefined.
@@ -47,12 +27,12 @@ export interface PathDoc {
 }
 
 export interface SnapshotLog {
-  path: string,
-  old_field: string,
-  field: string,
-  old_snapshot: Long,
-  snapshot: Long
-};
+  path: string;
+  old_field: string;
+  field: string;
+  old_snapshot: Long;
+  snapshot: Long;
+}
 
 export class MerkleTreeDb {
   private readonly client: MongoClient;
@@ -81,50 +61,66 @@ export class MerkleTreeDb {
     }
   }
 
-  private async cb_on_db(cb: any) {
+  private async cb_on_db<T>(cb: (database: Db) => T | Promise<T>) {
     const client = await this.getMongoClient();
     const database = client.db(this.db_name);
     return await cb(database);
   }
 
-  private async cb_on_db_tx(cb: any) {
+  private async cb_on_db_tx<T>(cb: (database: Db) => T | Promise<T>) {
     const client = await this.getMongoClient();
     const database = client.db(this.db_name);
-    const session = client.startSession();
-    await session.withTransaction(async () => {
-      await cb(database);
-    })
-    await session.endSession();
+    return await client.withSession(
+      async (session) =>
+        await session.withTransaction(async () => await cb(database))
+    );
   }
 
-  private async cb_on_collection(collection: string, cb: any) {
-    return await this.cb_on_db(async (database: Db) => {
+  private async cb_on_collection<T>(
+    collection: string,
+    cb: (coll: Collection<Document>) => T | Promise<T>
+  ) {
+    return await this.cb_on_db(async (database) => {
       const coll = database.collection(collection);
-      return await cb(coll)
-    })
+      return await cb(coll);
+    });
   }
 
-  private async findOne(query: any, collection: string) {
-    const result = await this.cb_on_collection(collection, (coll: Collection<Document>) => { return coll.findOne(query) });
+  private async findOne<TSchema>(filter: Filter<TSchema>, collection: string) {
+    const result = await this.cb_on_collection(collection, async (coll) => {
+      return await coll.findOne(filter);
+    });
     return result === null ? undefined : result;
   }
 
   /* update a doc, if not found then insert one */
-  private async updateOne(query: any, doc: any, collection: string) {
-    await this.cb_on_collection(collection, (coll: Collection<Document>) => { coll.replaceOne(query, doc, { upsert: true }) })
+  private async updateOne<TSchema>(
+    filter: Filter<TSchema>,
+    doc: Document,
+    collection: string
+  ) {
+    return await this.cb_on_collection(collection, async (coll) => {
+      return await coll.replaceOne(filter, doc, { upsert: true });
+    });
   }
 
-  private async updateWithLogging(query: any, doc: PathDoc, logging: SnapshotLog) {
-    await this.cb_on_db_tx(async (database: Db) => {
-      const live_collection = database.collection(merkle_tree_collection);
-      await live_collection.replaceOne(query, doc, { upsert: true });
-      const log_collection = database.collection(logging_collection);
+  private async updateWithLogging<TSchema>(
+    filter: Filter<TSchema>,
+    doc: PathDoc,
+    logging: SnapshotLog
+  ) {
+    const query_old_log = {
+      path: doc.path,
+      snapshot: logging.snapshot,
+    };
 
-      let query_old_log = {
-        path: doc.path,
-        snapshot: logging.snapshot
-      };
-      let old_logging = await log_collection.findOne(query_old_log);
+    await this.cb_on_db_tx(async (database) => {
+      const live_collection = database.collection(merkle_tree_collection);
+      await live_collection.replaceOne(filter, doc, { upsert: true });
+
+      const log_collection = database.collection(logging_collection);
+      const old_logging = await log_collection.findOne(query_old_log);
+
       if (old_logging === null) {
         await log_collection.insertOne(logging);
       } else {
@@ -138,29 +134,35 @@ export class MerkleTreeDb {
   /*
    * Update merkly tree with logging
    */
-  updatePathLogging(k: string, old_value: Field, new_value: Field, _old_ss: string | Long, _ss: string | Long) {
+  updatePathLogging(
+    k: string,
+    old_value: Field,
+    new_value: Field,
+    _old_ss: string | Long,
+    _ss: string | Long
+  ) {
     const old_ss = normalize_to_string(_old_ss);
     const ss = normalize_to_string(_ss);
 
     const query = {
-      path: k
+      path: k,
     };
 
     const doc: PathDoc = {
       path: k,
       field: new_value.v.toString(16),
-      snapshot: Long.fromString(ss)
+      snapshot: normalize_to_long(ss),
     };
 
     const log: SnapshotLog = {
       path: k,
       old_field: old_value.v.toString(16),
       field: new_value.v.toString(16),
-      old_snapshot: Long.fromString(old_ss),
-      snapshot: Long.fromString(ss)
+      old_snapshot: normalize_to_long(old_ss),
+      snapshot: normalize_to_long(ss),
     };
 
-    return this.updateWithLogging(query, doc, log)
+    return this.updateWithLogging(query, doc, log);
   }
 
   /*
@@ -168,40 +170,35 @@ export class MerkleTreeDb {
    */
   async queryMerkleTreeNodeFromPath(k: string) {
     const query = {
-      path: k
+      path: k,
     };
 
     const doc = await this.findOne(query, merkle_tree_collection);
-    return doc === undefined ? undefined :
-      {
+    return (
+      doc && {
         path: k,
         field: new Field(new BN(doc.field, 16)),
-        snapshot: doc.snapshot
-      };
+        snapshot: doc.snapshot,
+      }
+    );
   }
 
   /*
    * Snapshot
    */
   updateLatestSnapshotId(_id: string | Long) {
-    const id = normalize_to_string(_id);
-
     const doc = {
-      snapshot_id: Long.fromString(id)
+      snapshot_id: normalize_to_long(_id),
     };
 
-    return this.updateOne({}, doc, snapshot_id_collection)
+    return this.updateOne({}, doc, snapshot_id_collection);
   }
 
-  async queryLatestSnapshotId(): Promise<string> {
+  async queryLatestSnapshotId() {
     let node = await this.findOne({}, snapshot_id_collection);
-    let id = node.snapshot_id;
-    if (node === undefined) {
-      return default_snapshot_id
-    } else {
-      let id: Long = node.snapshot_id;
-      return id.toString()
-    }
+    return node === undefined
+      ? default_snapshot_id
+      : node.snapshot_id.toString();
   }
 
   async restoreMerkleTree(_snapshot: string | Long) {
@@ -210,12 +207,12 @@ export class MerkleTreeDb {
     await this.cb_on_db_tx(async (database: Db) => {
       const live_collection = database.collection(merkle_tree_collection);
       const log_collection = database.collection(logging_collection);
-      const path_should_revert = await log_collection.aggregate(
-        [
+      const path_should_revert = await log_collection
+        .aggregate([
           { $match: { snapshot: { $gt: snapshot } } },
           { $group: { _id: "$path" } },
-        ]
-      ).toArray();
+        ])
+        .toArray();
 
       for (const _path of path_should_revert) {
         const path = _path._id;
