@@ -1,6 +1,6 @@
 import { BN } from "bn.js";
 import sha256 from "sha256";
-import { Point, PrivateKey } from "../babyjubjub";
+import { Point, PrivateKey } from "../src/babyjubjub";
 
 const prik = PrivateKey.random();
 console.log(prik.key.v.toString("hex"));
