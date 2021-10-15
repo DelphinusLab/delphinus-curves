@@ -5,8 +5,7 @@ import {
   local_uri,
   MerkleTreeDb
 } from "./db";
-import { Cache } from "./cache";
-import BN from "bn.js";
+import LRUCache = require('lru-cache');
 
 const hash = poseidon;
 export const MaxHeight = 16;
@@ -19,9 +18,13 @@ export interface PathInfo {
   pathDigests: Field[][];
 }
 
+const cacheOptions: any = {};
+cacheOptions.max = 100;
+cacheOptions.maxAge = 60 * 1000;
+
 export class MarkleTree {
   private currentSnapshotIdx: string | undefined = undefined;
-  private cache = new Cache(10000);
+  private cache = new LRUCache<string, Field>(10000);
   private db_name = "delphinus";
   private db = new MerkleTreeDb(local_uri, this.db_name);
 
@@ -46,7 +49,7 @@ export class MarkleTree {
     if (mtIndex.startsWith("-")) {
       throw new Error(mtIndex);
     }
-    let field = this.cache.find(mtIndex);
+    let field = this.cache.get(mtIndex);
     if (field !== undefined) {
       return field;
     } else {
@@ -71,7 +74,7 @@ export class MarkleTree {
       );
     }
 
-    this.cache.add(mtIndex, value);
+    this.cache.set(mtIndex, value);
   }
 
   async startSnapshot(id: string) {
@@ -89,7 +92,7 @@ export class MarkleTree {
 
   async loadSnapshot(latest_snapshot: string) {
     await this.db.restoreMerkleTree(latest_snapshot);
-    this.cache.invalidate();
+    this.cache.reset();
   }
 
   async closeDb() {
