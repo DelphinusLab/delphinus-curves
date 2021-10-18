@@ -86,16 +86,16 @@ export class MerkleTreeDb {
     });
   }
 
-  private async findOne<TSchema>(filter: Filter<TSchema>, collection: string) {
+  private async findOne<TSchema extends Document>(filter: Filter<Document>, collection: string) {
     const result = await this.cb_on_collection(collection, async (coll) => {
-      return await coll.findOne(filter);
+      return await coll.findOne<TSchema>(filter);
     });
     return result === null ? undefined : result;
   }
 
   /* update a doc, if not found then insert one */
-  private async updateOne<TSchema>(
-    filter: Filter<TSchema>,
+  private async updateOne(
+    filter: Filter<Document>,
     doc: Document,
     collection: string
   ) {
@@ -104,8 +104,8 @@ export class MerkleTreeDb {
     });
   }
 
-  private async updateWithLogging<TSchema>(
-    filter: Filter<TSchema>,
+  private async updateWithLogging(
+    filter: Filter<Document>,
     doc: PathDoc,
     logging: SnapshotLog
   ) {
