@@ -1,11 +1,7 @@
 import { Field } from "./field";
 import { poseidon } from "./poseidon";
-import {
-  default_snapshot_id,
-  local_uri,
-  MerkleTreeDb
-} from "./db";
-import LRUCache = require('lru-cache');
+import { default_snapshot_id, local_uri, MerkleTreeDb } from "./db";
+import LRUCache = require("lru-cache");
 
 const hash = poseidon;
 export const MaxHeight = 16;
@@ -24,9 +20,19 @@ cacheOptions.maxAge = 60 * 1000;
 
 export class MerkleTree {
   private currentSnapshotIdx: string | undefined = undefined;
-  private cache = new LRUCache<string, Field>(10000);
-  private db_name = "delphinus";
-  private db = new MerkleTreeDb(local_uri, this.db_name);
+  private cache;
+  private dbName = "delphinus";
+  private db;
+  private inMemoryMerkleTree;
+
+  constructor(memData = false) {
+    if (memData) {
+      this.inMemoryMerkleTree = new Map();
+    } else {
+      this.cache = new LRUCache<string, Field>(10000);
+      this.db = new MerkleTreeDb(local_uri, this.dbName);
+    }
+  }
 
   static emptyHashes: Field[] = [];
   static emptyNodeHash(height: number) {
@@ -42,14 +48,20 @@ export class MerkleTree {
   }
 
   private async getRawNode(mtIndex: string) {
-    return await this.db.queryMerkleTreeNodeFromPath(mtIndex + "I");
+    return await this.db!.queryMerkleTreeNodeFromPath(mtIndex + "I");
   }
 
   async getNode(mtIndex: string) {
     if (mtIndex.startsWith("-")) {
       throw new Error(mtIndex);
     }
-    let field = this.cache.get(mtIndex);
+
+    // in-memory merkle tree
+    if (this.inMemoryMerkleTree !== undefined) {
+      return this.inMemoryMerkleTree.get(mtIndex + "I");
+    }
+
+    let field = this.cache!.get(mtIndex);
     if (field !== undefined) {
       return field;
     } else {
@@ -59,11 +71,15 @@ export class MerkleTree {
   }
 
   async setNode(mtIndex: string, value: Field) {
+    if (this.inMemoryMerkleTree !== undefined) {
+      return this.inMemoryMerkleTree.set(mtIndex + "I", value);
+    }
+
     if (this.currentSnapshotIdx === undefined) {
       throw new Error("snapshot not set");
     } else {
       let oldDoc = (await this.getRawNode(mtIndex)) || undefined;
-      await this.db.updatePathLogging(
+      await this.db!.updatePathLogging(
         mtIndex + "I",
         oldDoc?.field !== undefined
           ? oldDoc.field
@@ -74,29 +90,47 @@ export class MerkleTree {
       );
     }
 
-    this.cache.set(mtIndex, value);
+    this.cache!.set(mtIndex, value);
   }
 
   async startSnapshot(id: string) {
+    if (this.inMemoryMerkleTree !== undefined) {
+      return;
+    }
+
     this.currentSnapshotIdx = id;
   }
 
   async endSnapshot() {
-    this.db.updateLatestSnapshotId(this.currentSnapshotIdx!);
+    if (this.inMemoryMerkleTree !== undefined) {
+      return;
+    }
+
+    this.db!.updateLatestSnapshotId(this.currentSnapshotIdx!);
     this.currentSnapshotIdx = undefined;
   }
 
   async lastestSnapshot() {
-    return this.db.queryLatestSnapshotId();
+    return this.inMemoryMerkleTree !== undefined
+      ? "0"
+      : this.db!.queryLatestSnapshotId();
   }
 
   async loadSnapshot(latest_snapshot: string) {
-    await this.db.restoreMerkleTree(latest_snapshot);
-    this.cache.reset();
+    if (this.inMemoryMerkleTree !== undefined) {
+      return;
+    }
+
+    await this.db!.restoreMerkleTree(latest_snapshot);
+    this.cache!.reset();
   }
 
   async closeDb() {
-    await this.db.closeMongoClient();
+    if (this.inMemoryMerkleTree !== undefined) {
+      return;
+    }
+
+    await this.db!.closeMongoClient();
   }
 
   private async getNodeOrDefault(mtIndex: string) {
