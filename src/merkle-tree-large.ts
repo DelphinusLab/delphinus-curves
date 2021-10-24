@@ -22,7 +22,7 @@ const cacheOptions: any = {};
 cacheOptions.max = 100;
 cacheOptions.maxAge = 60 * 1000;
 
-export class MarkleTree {
+export class MerkleTree {
   private currentSnapshotIdx: string | undefined = undefined;
   private cache = new LRUCache<string, Field>(10000);
   private db_name = "delphinus";
@@ -67,7 +67,7 @@ export class MarkleTree {
         mtIndex + "I",
         oldDoc?.field !== undefined
           ? oldDoc.field
-          : MarkleTree.emptyNodeHash(mtIndex.length),
+          : MerkleTree.emptyNodeHash(mtIndex.length),
         value,
         oldDoc?.snapshot ?? default_snapshot_id,
         this.currentSnapshotIdx
@@ -102,7 +102,7 @@ export class MarkleTree {
   private async getNodeOrDefault(mtIndex: string) {
     let value = await this.getNode(mtIndex);
     if (value === undefined) {
-      value = MarkleTree.emptyNodeHash(mtIndex.length);
+      value = MerkleTree.emptyNodeHash(mtIndex.length);
     }
     return value;
   }
@@ -110,7 +110,7 @@ export class MarkleTree {
   private async getNodeOrCreate(mtIndex: string) {
     let value = await this.getNode(mtIndex);
     if (value === undefined) {
-      value = MarkleTree.emptyNodeHash(mtIndex.length);
+      value = MerkleTree.emptyNodeHash(mtIndex.length);
       await this.setNode(mtIndex, value);
     }
     return value;

@@ -1,10 +1,10 @@
 import { Field } from "../src/field";
-import { MarkleTree } from "../src/markle-tree-large";
+import { MerkleTree } from "../src/merkle-tree-large";
 
 var assert = require('assert');
 
 async function main() {
-    const merkle_tree = new MarkleTree();
+    const merkle_tree = new MerkleTree();
 
     await merkle_tree.loadSnapshot("0");
 
@@ -36,7 +36,7 @@ async function main() {
 
     await merkle_tree.loadSnapshot("0");
     await merkle_tree.getNode("0001").then((node) => {
-        assert.ok(node!.v.eq(MarkleTree.emptyNodeHash(4).v));
+        assert.ok(node!.v.eq(MerkleTree.emptyNodeHash(4).v));
     });
 
     await merkle_tree.startSnapshot("1");
@@ -49,7 +49,7 @@ async function main() {
     await merkle_tree.endSnapshot();
     await merkle_tree.loadSnapshot("0");
     await merkle_tree.getNode("0001").then((node) => {
-        assert.ok(node!.v.eq(MarkleTree.emptyNodeHash(4).v));
+        assert.ok(node!.v.eq(MerkleTree.emptyNodeHash(4).v));
     });
 
     await merkle_tree.closeDb();

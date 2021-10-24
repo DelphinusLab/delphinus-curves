@@ -9,6 +9,10 @@ export class Field {
     );
   }
 
+  toString() {
+    return this.v.toString(10);
+  }
+
   constructor(v: BN | number) {
     if (!(v instanceof BN)) {
       v = new BN(v);

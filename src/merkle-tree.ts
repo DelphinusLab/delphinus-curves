@@ -15,7 +15,7 @@ export interface PathInfo {
   pathDigests: Field[][];
 }
 
-export class MarkleTree {
+export class MerkleTree {
   static emptyHashes: Field[] = [];
 
   static emptyNodeHash(height: number) {
@@ -37,7 +37,7 @@ export class MarkleTree {
     };
   }
 
-  root: Node = MarkleTree.emptyNode(MaxHeight);
+  root: Node = MerkleTree.emptyNode(MaxHeight);
 
   getPath(index: number): PathInfo {
     const ret = {
@@ -48,9 +48,9 @@ export class MarkleTree {
 
     let curr = this.root;
     for (let level = MaxHeight; level >= 1; level--) {
-      ret.pathDigests.push(curr.children.map(n => n?.value ?? MarkleTree.emptyNodeHash(level - 1)));
+      ret.pathDigests.push(curr.children.map(n => n?.value ?? MerkleTree.emptyNodeHash(level - 1)));
       const offset = (index >> ((level - 1) * 2)) & 3;
-      curr = curr.children[offset] ?? MarkleTree.emptyNode(level);
+      curr = curr.children[offset] ?? MerkleTree.emptyNode(level);
     }
 
     return ret;
@@ -64,7 +64,7 @@ export class MarkleTree {
 
     for (let level = MaxHeight - 1; level >= 0; level--) {
       const offset = (index >> (level * 2)) & 3;
-      const next = curr.children[offset] ?? MarkleTree.emptyNode(level);
+      const next = curr.children[offset] ?? MerkleTree.emptyNode(level);
       curr.children[offset] = next;
       curr = next;
       path.push(curr);
@@ -87,7 +87,7 @@ export class MarkleTree {
   _updateHash(path: Node[]) {
     for (let level = 1; level <= MaxHeight; level++) {
       const _curr = path.pop()!;
-      const _childrenValues = _curr.children.map(n => n?.value ?? MarkleTree.emptyNodeHash(level - 1));
+      const _childrenValues = _curr.children.map(n => n?.value ?? MerkleTree.emptyNodeHash(level - 1));
       _curr.value = hash(_childrenValues);
 
       //console.log(`level ${level}`);
