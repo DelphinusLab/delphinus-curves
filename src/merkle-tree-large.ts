@@ -106,7 +106,7 @@ export class MerkleTree {
       return;
     }
 
-    this.db!.updateLatestSnapshotId(this.currentSnapshotIdx!);
+    await this.db!.updateLatestSnapshotId(this.currentSnapshotIdx!);
     this.currentSnapshotIdx = undefined;
   }
 
