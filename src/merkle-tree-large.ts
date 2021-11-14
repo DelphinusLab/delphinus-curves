@@ -1,6 +1,7 @@
+import { MongoDBUri } from "delphinus-deployment/src/mongodb";
 import { Field } from "./field";
 import { poseidon } from "./poseidon";
-import { default_snapshot_id, local_uri, MerkleTreeDb } from "./db";
+import { default_snapshot_id, MerkleTreeDb } from "./db";
 import LRUCache = require("lru-cache");
 
 const hash = poseidon;
@@ -30,7 +31,7 @@ export class MerkleTree {
       this.inMemoryMerkleTree = new Map();
     } else {
       this.cache = new LRUCache<string, Field>(10000);
-      this.db = new MerkleTreeDb(local_uri, this.dbName);
+      this.db = new MerkleTreeDb(MongoDBUri, this.dbName);
     }
   }
 
