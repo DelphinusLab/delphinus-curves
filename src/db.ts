@@ -2,7 +2,6 @@ import { Collection, Document, MongoClient, Db, Long, Filter } from "mongodb";
 import { Field } from "./field";
 import { BN } from "bn.js";
 
-export const local_uri = "mongodb://localhost:27017/";
 const merkle_tree_collection = "merkle_tree";
 const logging_collection = "merkle_tree_logging";
 const snapshot_id_collection = "merkle_tree_snapshot_id";
