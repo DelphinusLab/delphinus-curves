@@ -3,9 +3,14 @@ import { Field } from "./field";
 import { BN } from "bn.js";
 
 export const local_uri = "mongodb://localhost:27017/";
-const merkle_tree_collection = "merkle_tree";
-const logging_collection = "merkle_tree_logging";
-const snapshot_id_collection = "merkle_tree_snapshot_id";
+export const merkle_tree_collection = "merkle_tree";
+export const logging_collection = "merkle_tree_logging";
+export const snapshot_id_collection = "merkle_tree_snapshot_id";
+export const all_collections = [
+  merkle_tree_collection,
+  logging_collection,
+  snapshot_id_collection
+]
 
 function normalize_to_string(arg: string | Long): string {
   return arg.toString();
@@ -61,7 +66,7 @@ export class MerkleTreeDb {
     }
   }
 
-  private async cb_on_db<T>(cb: (database: Db) => T | Promise<T>) {
+  async cb_on_db<T>(cb: (database: Db) => T | Promise<T>) {
     const client = await this.getMongoClient();
     const database = client.db(this.db_name);
     return await cb(database);

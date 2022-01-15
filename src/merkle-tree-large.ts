@@ -19,9 +19,9 @@ cacheOptions.max = 100;
 cacheOptions.maxAge = 60 * 1000;
 
 export class MerkleTree {
+  static dbName = "delphinus";
   private currentSnapshotIdx: string | undefined = undefined;
   private cache;
-  private dbName = "delphinus";
   private db;
   private inMemoryMerkleTree;
 
@@ -30,7 +30,7 @@ export class MerkleTree {
       this.inMemoryMerkleTree = new Map();
     } else {
       this.cache = new LRUCache<string, Field>(10000);
-      this.db = new MerkleTreeDb(local_uri, this.dbName);
+      this.db = new MerkleTreeDb(local_uri, MerkleTree.dbName);
     }
   }
 
