@@ -159,11 +159,41 @@ export class MerkleTree {
     return ret;
   }
 
-  private async fillPath(index: number) {
+  private async fillPath(index: number): Promise<PathInfo> {
     const mtIndex = this.convertToMtIndex(index);
     for (let i = 0; i < MaxHeight; i++) {
       await this.getNodeOrCreate(mtIndex.slice(0, i));
     }
+
+    return await this.getPath(index);
+  }
+
+  //Subtle difference between the above and this version 2
+  //Originally fillPath only create the nodes (if not exist) on the single line from root to the leave. So only touch 16 nodes
+  //Thus I fix original function with the orignal behavior. (Do not create other nodes in the path, only create nodes on the single line if it does not exist.)
+  //This version will create nodes in the path (if not exist), which means touch 4 nodes each level in the path.
+  //Currently the result looks like same. As if the node originally does not exist, create will use default to create (fill value 0).
+  //However, it still different in the memory.
+  //Thus need draft PR review to decide which function should be correct.
+  private async fillPathV2(index: number): Promise<PathInfo> {
+    const ret = {
+      root: await this.getNodeOrCreate(""),
+      index: index,
+      pathDigests: [] as Field[][],
+    } as PathInfo;
+
+    const mtIndex = this.convertToMtIndex(index);
+    for (let i = 0; i < MaxHeight; i++) {
+      const digests = await Promise.all(
+        // Used to generate [0, 1, ..., BlockSize]
+        Array.from(Array(BlockSize).keys()).map((v) =>
+          this.getNodeOrCreate(mtIndex.slice(0, i) + v)
+        )
+      );
+      ret.pathDigests.push(digests);
+    }
+
+    return ret;
   }
 
   async getPath(index: number) {
