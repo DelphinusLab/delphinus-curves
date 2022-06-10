@@ -159,11 +159,13 @@ export class MerkleTree {
     return ret;
   }
 
-  private async fillPath(index: number) {
+  private async fillPath(index: number): Promise<PathInfo> {
     const mtIndex = this.convertToMtIndex(index);
     for (let i = 0; i < MaxHeight; i++) {
       await this.getNodeOrCreate(mtIndex.slice(0, i));
     }
+
+    return await this.getPath(index);
   }
 
   async getPath(index: number) {

@@ -1,7 +1,16 @@
 import { Field } from "../src/field";
-import { MerkleTree } from "../src/merkle-tree-large";
+import { MerkleTree, PathInfo } from "../src/merkle-tree-large";
 
 var assert = require('assert');
+
+function convertToMtIndex(index: number): string {
+    // toString() may get negative value
+    let ret = "";
+    for (let i = 0; i < 16; i++) {
+      ret = ((index >> (i * 2)) & 3).toString() + ret;
+    }
+    return ret;
+}
 
 async function testDBMerkleTree() {
     const merkle_tree = new MerkleTree();
@@ -51,6 +60,21 @@ async function testDBMerkleTree() {
     await merkle_tree.getNode("0001").then((node: any) => {
         assert.ok(node!.v.eq(MerkleTree.emptyNodeHash(4).v));
     });
+
+    await merkle_tree.loadSnapshot("0");
+    await merkle_tree.startSnapshot("1");
+    await merkle_tree.setNode("0", new Field(1));
+    await merkle_tree.setLeave(0, new Field(2)).then(
+        (path:PathInfo) => {
+            assert.equal(path.pathDigests[0][0].v.toNumber(), 1);
+        }
+    );
+    await merkle_tree.getNode(convertToMtIndex(0)).then(
+        (node: any) => {
+            assert.equal(node!.v.toNumber(), 2);
+        }
+    );
+    await merkle_tree.endSnapshot();
 
     await merkle_tree.closeDb();
 }
