@@ -162,6 +162,21 @@ export class Point {
   }
 }
 
+function u8ToHex(u8Array: Uint8Array): string {
+    return Array.from(u8Array)
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+export function bnToHexLe(n: BN): string {
+    let bytes = n.toArray("le", 32);
+    let v:Uint8Array = new Uint8Array(32);
+    for (var i=0; i<32; i++) {
+        v[i] = bytes[i]
+    }
+    return u8ToHex(v);
+}
+
 export class PrivateKey {
   readonly key: CurveField;
   private pubk?: PublicKey;
@@ -209,7 +224,13 @@ export class PrivateKey {
     content = content.concat(message);
 
     let H = new BN(sha256(content), "hex");
+    let bytesPacked = H.toString("hex", 64);
+    console.log("Signing messag:", bytesPacked);
     console.log(H.toArray());
+    console.log("Message in little endian:");
+    console.log(bnToHexLe(H));
+
+    console.log("----------------------------------");
 
     let S = r.add(this.key.mul(new CurveField(H)));
 
