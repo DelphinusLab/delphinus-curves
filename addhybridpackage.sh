@@ -5,25 +5,13 @@
 
 cat >dist/cjs/package.json <<!EOF
 {
-    "type": "commonjs",
-    "exports": {
-        "./*": {
-          "import": "./src/*.js",
-          "require": "./src/*.js"
-        }
-    }
+    "type": "commonjs"
 }
 !EOF
 
 cat >dist/mjs/package.json <<!EOF
 {
-    "type": "module",
-    "exports": {
-        "./*": {
-          "import": "./src/*.js",
-          "require": "./src/*.js"
-        }
-    }
+    "type": "module"
 }
 !EOF
 

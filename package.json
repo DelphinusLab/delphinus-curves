@@ -12,7 +12,7 @@
   "author": "ZhenXunGe",
   "license": "UNLICENSED",
   "exports": {
-    ".": {
+    "./src/*": {
       "import": "./dist/mjs/src/*.js",
       "require": "./dist/cjs/src/*.js"
     }
