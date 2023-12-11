@@ -1,7 +1,7 @@
 import BN from "bn.js";
 import sha256 from "sha256";
 import crypto from "crypto";
-import { Field } from "./field";
+import { Field } from "./field.js";
 
 export class CurveField {
   readonly v: BN;

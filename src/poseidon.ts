@@ -1,6 +1,6 @@
 import { BN } from "bn.js";
-import { Field } from "./field";
-import { C, M } from "./poseidon-constants"
+import { Field } from "./field.js";
+import { C, M } from "./poseidon-constants.js"
 
 const N_ROUNDS_F = 8;
 const N_ROUNDS_P = [56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68];

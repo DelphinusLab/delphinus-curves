@@ -1,5 +1,5 @@
 import { Collection, Document, MongoClient, Db, Long, Filter } from "mongodb";
-import { Field } from "./field";
+import { Field } from "./field.js";
 import { BN } from "bn.js";
 
 export const local_uri = "mongodb://localhost:27017/";
