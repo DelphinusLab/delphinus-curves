@@ -192,7 +192,7 @@ export class PrivateKey {
   }
 
   static fromString(str: string) {
-    new PrivateKey(new CurveField(new BN(str, "hex")));
+    return new PrivateKey(new CurveField(new BN(str, "hex")));
   }
 
   toString() {
