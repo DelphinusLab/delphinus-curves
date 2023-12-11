@@ -13,8 +13,8 @@
   "license": "UNLICENSED",
   "exports": {
     ".": {
-      "import": "./dist/mjs/*.js",
-      "require": "./dist/cjs/*.js"
+      "import": "./dist/mjs/src/*.js",
+      "require": "./dist/cjs/src/*.js"
     }
   },
   "dependencies": {
