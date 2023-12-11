@@ -1,6 +1,6 @@
-import { Field } from "./field";
-import { poseidon } from "./poseidon";
-import { default_snapshot_id, local_uri, MerkleTreeDb } from "./db";
+import { Field } from "./field.js";
+import { poseidon } from "./poseidon.js";
+import { default_snapshot_id, local_uri, MerkleTreeDb } from "./db.js";
 import LRUCache from "lru-cache";
 
 const hash = poseidon;
