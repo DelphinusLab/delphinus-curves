@@ -12,21 +12,39 @@ console.log(pubk.key.x.v.toString("hex"), pubk.key.y.v.toString("hex"));
 const sign = prik.sign(new BN(0).toArray('be', 64));
 console.log(
     "r_x:",
-    sign[0][0].toString("hex", 64),
+    sign[0][0].toString("hex", 64), // rx
     bnToHexLe(sign[0][0]),
     "r_y:",
-    sign[0][1].toString("hex", 64),
+    sign[0][1].toString("hex", 64), // ry
     bnToHexLe(sign[0][1]),
     "r_s:",
-    sign[1].toString("hex", 64),
+    sign[1].toString("hex", 64),    // rs
     bnToHexLe(sign[1]),
     "pub_x:",
-    pubk.key.x.v.toString("hex", 64),
+    pubk.key.x.v.toString("hex", 64),  //pubx
     bnToHexLe(pubk.key.x.v),
     "pub_y:",
-    pubk.key.y.v.toString("hex", 64),
+    pubk.key.y.v.toString("hex", 64),  //puby
     bnToHexLe(pubk.key.y.v),
 );
+
+console.log(
+    bnToHexLe(pubk.key.x.v),
+);
+console.log(
+    bnToHexLe(pubk.key.y.v),
+);
+console.log(
+    bnToHexLe(sign[0][0]), // rx
+);
+console.log(
+    bnToHexLe(sign[0][1]), // ry
+);
+console.log(
+    bnToHexLe(sign[1]),
+);
+
+
 
 let l = Point.base.mul(sign[1]);
 let r = new Point(sign[0][0], sign[0][1]).add(
