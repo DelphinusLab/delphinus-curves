@@ -9,7 +9,7 @@ const pubk = prik.publicKey;
 console.log("generated pubkey is:");
 console.log(pubk.key.x.v.toString("hex"), pubk.key.y.v.toString("hex"));
 
-const sign = prik.sign(new BN(0).toArray('be', 64));
+const sign = prik.sign(new BN(0).toArrayLike(Buffer, 'be', 64));
 console.log(
     "r_x:",
     sign[0][0].toString("hex", 64), // rx

@@ -1,5 +1,6 @@
 import BN from "bn.js";
 import sha256 from "sha256";
+import { Keccak } from "sha3";
 import crypto from "crypto";
 import { Field } from "./field.js";
 
@@ -211,19 +212,18 @@ export class PrivateKey {
     return this.pubk;
   }
 
-  sign(message: number[]): [[BN, BN], BN] {
-    let Ax = this.publicKey.key.x;
+  hashMessage(msg: Uint8Array): Uint8Array{
+    const hash = new Keccak(256);
+    hash.update(Buffer.from(msg));
+    let bytes = hash.digest();
+    return bytes;
+  }
+
+  sign(message: Uint8Array): [[BN, BN], BN] {
     let r = this.r();
-
     let R = Point.base.mul(r);
-    let Rx = R.x;
 
-    let content: number[] = [];
-    content = content.concat(Rx.v.toArray("be", 32));
-    content = content.concat(Ax.v.toArray("be", 32));
-    content = content.concat(message);
-
-    let H = new BN(sha256(content), "hex");
+    let H = new BN((new Buffer(this.hashMessage(message))).toString("hex"));
     let bytesPacked = H.toString("hex", 64);
     console.log("Signing messag:", bytesPacked);
     console.log(H.toArray());
