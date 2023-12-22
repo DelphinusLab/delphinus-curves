@@ -212,18 +212,16 @@ export class PrivateKey {
     return this.pubk;
   }
 
-  hashMessage(msg: Uint8Array): Uint8Array{
-    const hash = new Keccak(256);
-    hash.update(Buffer.from(msg));
-    let bytes = hash.digest();
-    return bytes;
+  hashMessage(msg: Uint8Array): BN{
+    const hash = sha256(Buffer.from(msg));
+    return new BN(hash, "hex");
   }
 
   sign(message: Uint8Array): [[BN, BN], BN] {
     let r = this.r();
     let R = Point.base.mul(r);
 
-    let H = new BN((new Buffer(this.hashMessage(message))).toString("hex"));
+    let H = this.hashMessage(message);
     let bytesPacked = H.toString("hex", 64);
     console.log("Signing messag:", bytesPacked);
     console.log(H.toArray());
