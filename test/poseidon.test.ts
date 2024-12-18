@@ -1,6 +1,6 @@
 import BN from "bn.js";
 import { Field } from "../src/field";
-import { poseidon, Poseidon } from "../src/pse_poseidon";
+import { Poseidon } from "../src/poseidon";
 import { config } from "./config-basic";
 
 
