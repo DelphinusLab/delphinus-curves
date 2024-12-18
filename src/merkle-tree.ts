@@ -1,5 +1,5 @@
-import { Field } from "./field";
-import { poseidon } from "./poseidon";
+import { Field } from "./field.js";
+import { poseidon } from "./poseidon.js";
 
 const hash = poseidon;
 export const MaxHeight = 16;

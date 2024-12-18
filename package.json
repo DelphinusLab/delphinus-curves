@@ -3,13 +3,19 @@
   "version": "0.0.1",
   "description": "",
   "scripts": {
-    "build": "npx tsc",
+    "build": "rm -fr dist/* && npx tsc -p tsconfig.json && npx tsc -p tsconfig-cjs.json && sh ./addhybridpackage.sh",
     "prepare": "npm run build"
   },
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.js",
+  "types": "dist/mjs/index.d.ts",
   "author": "ZhenXunGe",
   "license": "UNLICENSED",
   "exports": {
-    "./*": "./dist/*.js"
+    "./src/*": {
+      "import": "./dist/mjs/src/*.js",
+      "require": "./dist/cjs/src/*.js"
+    }
   },
   "dependencies": {
     "bn.js": "^5.2.0",
@@ -17,7 +23,8 @@
     "fs-extra": "^10.0.0",
     "lru-cache": "^6.0.0",
     "mongodb": "^4.1.3",
-    "sha256": "^0.2.0"
+    "sha256": "^0.2.0",
+    "sha3": "^2.1.4"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",

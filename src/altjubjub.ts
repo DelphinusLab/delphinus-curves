@@ -1,7 +1,8 @@
 import BN from "bn.js";
 import sha256 from "sha256";
+import { Keccak } from "sha3";
 import crypto from "crypto";
-import { Field } from "./field";
+import { Field } from "./field.js";
 
 export class CurveField {
   readonly v: BN;
@@ -211,19 +212,16 @@ export class PrivateKey {
     return this.pubk;
   }
 
-  sign(message: number[]): [[BN, BN], BN] {
-    let Ax = this.publicKey.key.x;
+  hashMessage(msg: Uint8Array): BN{
+    const hash = sha256(Buffer.from(msg));
+    return new BN(hash, "hex");
+  }
+
+  sign(message: Uint8Array): [[BN, BN], BN] {
     let r = this.r();
-
     let R = Point.base.mul(r);
-    let Rx = R.x;
 
-    let content: number[] = [];
-    content = content.concat(Rx.v.toArray("be", 32));
-    content = content.concat(Ax.v.toArray("be", 32));
-    content = content.concat(message);
-
-    let H = new BN(sha256(content), "hex");
+    let H = this.hashMessage(message);
     let bytesPacked = H.toString("hex", 64);
     console.log("Signing messag:", bytesPacked);
     console.log(H.toArray());
