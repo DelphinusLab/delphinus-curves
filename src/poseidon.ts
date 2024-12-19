@@ -125,6 +125,23 @@ export class Poseidon {
         return;
     }
 
+    public update_exact(elements: Field[]): Field {
+        if (this.squeezed) {
+            throw new Error("Cannot update after squeeze");
+        }
+        if (elements.length != this.config.rate) {
+            throw new Error(`Invalid input size: ${elements.length}.`);
+        }
+        
+        const chunk = elements;
+        for(let j = 0; j < this.config.rate; j++) {
+            this.state[j+1] = this.state[j+1].add(chunk[j]);
+        }
+        this.permute();
+        logState('return from update', this.state);
+        return this.state[1];
+    }
+
     public update(elements: Field[]): void {
         if (this.squeezed) {
             throw new Error("Cannot update after squeeze");
