@@ -169,10 +169,10 @@ function u8ToHex(u8Array: Uint8Array): string {
         .join('');
 }
 
-export function bnToHexLe(n: BN): string {
-    let bytes = n.toArray("le", 32);
-    let v:Uint8Array = new Uint8Array(32);
-    for (var i=0; i<32; i++) {
+export function bnToHexLe(n: BN, sz: number = 32): string {
+    let bytes = n.toArray("le", sz);
+    let v:Uint8Array = new Uint8Array(sz);
+    for (var i=0; i<sz; i++) {
         v[i] = bytes[i]
     }
     return u8ToHex(v);
