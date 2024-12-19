@@ -1,6 +1,6 @@
-import { Field } from './field';
+import { Field } from './field.js';
 import BN from 'bn.js';
-import { config } from "./config";
+import { config } from "./config.js";
 
 const pow5 = (a: Field) => a.mul(a.mul(a.mul(a.mul(a))));
 
